@@ -188,12 +188,13 @@ export function evaluate(i: EvaluateInput): Evaluation {
 }
 
 /**
- * Crop around the face so it fills ~65% of the width (YouCam rejects faces narrower
- * than 60% of the image), 4:5 portrait, clamped to the frame. Same framing every
- * day also helps consistency.
+ * Crop around the face so it fills ~70% of the width (YouCam rejects faces narrower
+ * than 60% of the image; the margin absorbs detector differences), 4:5 portrait,
+ * clamped to the frame. Same framing every day also helps consistency.
  */
+export const FACE_WIDTH_FRACTION = 0.7;
 export function cropAroundFace(f: FaceDetection, frame: { w: number; h: number }) {
-  let w = f.box.w / 0.65;
+  let w = f.box.w / FACE_WIDTH_FRACTION;
   let h = w * 1.25;
   if (h > frame.h) {
     h = frame.h;

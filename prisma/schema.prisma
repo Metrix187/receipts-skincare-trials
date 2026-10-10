@@ -86,6 +86,8 @@ model Capture {
   skinAge      Float?
   units        Int      @default(0)
   mock         Boolean  @default(true)
+  /// Normalized YouCam result (scores, regions, mask URLs): the audit trail behind every number
+  youcamResult Json?
 
   photo        Photo?
   measurements Measurement[]

@@ -134,6 +134,7 @@ export async function resolveCapture(captureId: string, opts: { timeoutMs?: numb
         counts: alreadyCounted === 0,
         overall: result.overall,
         skinAge: result.skinAge,
+        youcamResult: { taskId: result.taskId, scores: result.scores, overall: result.overall, skinAge: result.skinAge } as object,
         errorMessage: notes.length ? notes.join("; ") : null,
       },
     });

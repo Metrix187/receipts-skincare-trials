@@ -73,9 +73,9 @@ describe("capture checks", () => {
 });
 
 describe("crop", () => {
-  it("makes the face fill ~65% of the crop width (YouCam needs > 60%)", () => {
+  it("makes the face fill ~70% of the crop width (YouCam needs > 60%)", () => {
     const crop = cropAroundFace(face, { w: W, h: H });
-    expect(face.box.w / crop.w).toBeCloseTo(0.65, 2);
+    expect(face.box.w / crop.w).toBeCloseTo(0.7, 2);
     expect(crop.h / crop.w).toBeCloseTo(1.25, 2);
     const g = faceInCrop(face, crop);
     expect(g.midlineX).toBeGreaterThan(0.4);
