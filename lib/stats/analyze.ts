@@ -120,6 +120,8 @@ export function analyzeTrial(input: AnalysisInput): AnalysisResult {
   const treatment = treatAll.filter((d) => d.day - input.treatmentStartDay >= washIn);
   const B = baseline.map((d) => d.v);
   const T = treatment.map((d) => d.v);
+  // Wash-in days are excluded from the effect but still inform the noise model.
+  const W = treatAll.filter((d) => d.day - input.treatmentStartDay < washIn).map((d) => d.v);
 
   const elapsedTreatment = treatAll.length
     ? Math.max(...treatAll.map((d) => d.day)) - input.treatmentStartDay + 1
@@ -168,7 +170,7 @@ export function analyzeTrial(input: AnalysisInput): AnalysisResult {
   }
 
   const rnd = prng(input.seed);
-  const boot = bootstrapDiff(T, B, { resamples, rnd });
+  const boot = bootstrapDiff(T, B, { resamples, rnd, noiseOnly: [W] });
   const label = decide(boot.ciLow, boot.ciHigh, input.sesoi);
 
   // ---- Days remaining: precision-based planning ---------------------------------
@@ -222,7 +224,7 @@ export function analyzeTrial(input: AnalysisInput): AnalysisResult {
       resamples,
     },
     daysRemaining: { precision, timeframe, overall, note },
-    trajectory: trajectory(T, B, treatment.map((d) => d.day), minT, input.seed),
+    trajectory: trajectory(T, B, W, treatment.map((d) => d.day), minT, input.seed),
   };
 }
 
@@ -234,10 +236,10 @@ export function decide(lo: number, hi: number, sesoi: number): VerdictLabel {
 }
 
 /** Effect estimate as it stood after each treatment day (shows the interval tightening). */
-function trajectory(T: number[], B: number[], days: number[], minT: number, seed: number): TrajectoryPoint[] {
+function trajectory(T: number[], B: number[], W: number[], days: number[], minT: number, seed: number): TrajectoryPoint[] {
   const out: TrajectoryPoint[] = [];
   for (let k = Math.max(3, Math.min(minT, T.length)); k <= T.length; k++) {
-    const b = bootstrapDiff(T.slice(0, k), B, { resamples: 1500, rnd: prng(seed + k) });
+    const b = bootstrapDiff(T.slice(0, k), B, { resamples: 1500, rnd: prng(seed + k), noiseOnly: [W] });
     out.push({ day: days[k - 1], effect: b.estimate, lo: b.ciLow, hi: b.ciHigh });
   }
   return out;

@@ -186,6 +186,20 @@ describe("calibration (simulation)", () => {
     expect(coverage).toBeLessThanOrEqual(0.99);
   });
 
+  // Hardest realistic case: 7 baseline days, 7 wash-in days (noise model only), 7
+  // analyzed days, strong carry-over. Before wash-in days fed the noise model and the
+  // phi bias correction used segment length, this sat at 0.88 coverage.
+  it("stays calibrated with a wash-in and short phases (>= 0.88 coverage)", () => {
+    let covered = 0;
+    const trials = 300;
+    for (let s = 0; s < trials; s++) {
+      const days = prePost({ nB: 7, nT: 14, effect: 0, sd: 2.6, phi: 0.45, seed: 9000 + s });
+      const r = analyzeTrial({ design: "pre_post", higherIsBetter: true, sesoi: 3, washInDays: 7, treatmentStartDay: 7, seed: s, days, resamples: 600 });
+      if (r.ciLow! <= 0 && 0 <= r.ciHigh!) covered++;
+    }
+    expect(covered / trials).toBeGreaterThanOrEqual(0.88);
+  });
+
   it("false 'improved' verdicts on a null effect stay rare (<= 10%)", () => {
     let improved = 0;
     const trials = 300;

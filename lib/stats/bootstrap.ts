@@ -56,16 +56,22 @@ export function estimatePhi(segments: readonly (readonly number[])[]) {
   let num = 0;
   let den = 0;
   let n = 0;
+  let k = 0;
   for (const seg of segments) {
+    if (seg.length < 2) continue;
     const m = mean(seg);
     for (let t = 1; t < seg.length; t++) {
       num += (seg[t] - m) * (seg[t - 1] - m);
       den += (seg[t - 1] - m) ** 2;
     }
     n += seg.length;
+    k++;
   }
   const raw = den > 0 ? num / den : 0;
-  const corrected = n > 0 ? raw + (1 + 3 * raw) / n : raw;
+  // Demeaning each segment biases phi down by ~(1 + 3 phi) / (segment length), so the
+  // correction uses the mean segment length, not the total day count.
+  const segLen = k > 0 ? n / k : 0;
+  const corrected = segLen > 0 ? raw + (1 + 3 * raw) / segLen : raw;
   return { raw, phi: Math.max(0, Math.min(0.9, corrected)) };
 }
 
@@ -85,15 +91,26 @@ export interface DiffBootstrap {
 export function bootstrapDiff(
   treatment: readonly number[],
   baseline: readonly number[],
-  opts: { resamples: number; rnd: () => number; level?: number },
+  opts: {
+    resamples: number;
+    rnd: () => number;
+    level?: number;
+    /**
+     * Extra contiguous segments used ONLY to estimate the noise model (phi and the
+     * innovations), e.g. wash-in days. They are real measurements of the same
+     * day-to-day noise even though they're excluded from the effect estimate.
+     */
+    noiseOnly?: readonly (readonly number[])[];
+  },
 ): DiffBootstrap {
   const level = opts.level ?? 0.95;
   const segs = baseline.length ? [treatment, baseline] : [treatment];
-  const { phi, raw } = estimatePhi(segs);
+  const noiseSegs = [...segs, ...(opts.noiseOnly ?? []).filter((s) => s.length >= 2)];
+  const { phi, raw } = estimatePhi(noiseSegs);
 
   // Innovations, centered and inflated for the 3 estimated parameters.
   const innov: number[] = [];
-  for (const seg of segs) {
+  for (const seg of noiseSegs) {
     const m = mean(seg);
     for (let t = 1; t < seg.length; t++) innov.push(seg[t] - m - phi * (seg[t - 1] - m));
   }
