@@ -37,7 +37,10 @@ model Trial {
   tier          String    @default("sd")
   /// ConcernKey[] sent as dst_actions (max 4 = cheapest unit tier)
   concerns      Json?
-  primaryMetric String?
+  /// ConcernKey analyzed for the verdict, e.g. "redness"
+  primaryConcern String?
+  /// mask_coverage (split_face, per side) | ui_score (pre_post, whole face)
+  primaryMetric  String?
   /// Smallest effect size of interest, in the primary metric's units
   sesoi         Float?
   /// Preferred capture time, local "HH:mm"

@@ -14,7 +14,8 @@ const schema = z.object({
   YOUCAM_UNIT_BUDGET: z.coerce.number().int().positive().optional().default(600),
   YOUCAM_BASE_URL: z.string().url().optional().default("https://yce-api-01.makeupar.com"),
   ANTHROPIC_API_KEY: z.string().optional().default(""),
-  ANTHROPIC_MODEL: z.string().optional().default("claude-sonnet-5-5"),
+  ANTHROPIC_MODEL: z.string().optional().default("claude-opus-5-5"),
+  ANTHROPIC_EFFORT: z.enum(["low", "medium", "high", "xhigh", "max"]).optional().default("medium"),
   MOCK_AGENTS: flag,
   PHOTO_ENCRYPTION_KEY: z.string().optional().default(""),
 });

@@ -7,6 +7,7 @@
     "build": "prisma generate && next build",
     "start": "next start",
     "lint": "eslint",
+    "typecheck": "next typegen && tsc --noEmit",
     "setup": "node scripts/setup-env.mjs && prisma db push && node scripts/copy-mediapipe.mjs",
     "postinstall": "prisma generate && node scripts/copy-mediapipe.mjs",
     "db:push": "prisma db push",
