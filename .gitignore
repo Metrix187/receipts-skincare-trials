@@ -53,3 +53,5 @@ youcamkey.env*
 /test-results
 /playwright-report
 /blob-report
+tests/e2e/fixtures/
+/prisma/e2e*.db*

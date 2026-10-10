@@ -88,6 +88,8 @@ export function headlineForTrial(trial: Trial, r: AnalysisResult, daysLogged: nu
     unit: meta.unit,
     design: trial.design as "split_face" | "pre_post",
     daysLogged,
+    better: meta.better,
+    lowerIsBetterArea: meta.less,
   });
 }
 

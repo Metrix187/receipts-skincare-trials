@@ -73,7 +73,8 @@ export function protocolConcerns(p: Pick<Protocol, "primary_concern" | "secondar
   return [p.primary_concern, ...p.secondary_concerns.filter((c) => c !== p.primary_concern)].slice(0, 4);
 }
 
+/** Effects are always oriented so + = better; `better` says what + means in words. */
 export const METRIC_META = {
-  ui_score: { label: "YouCam score", unit: "pts", higherIsBetter: true, short: "score" },
-  mask_coverage: { label: "Area flagged", unit: "% area", higherIsBetter: false, short: "% flagged" },
+  ui_score: { label: "YouCam score", unit: "pts", higherIsBetter: true, short: "score", better: "higher score", less: false },
+  mask_coverage: { label: "Cheek area flagged (%)", unit: "pts", higherIsBetter: false, short: "% flagged", better: "less of the cheek flagged", less: true },
 } as const;

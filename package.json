@@ -12,8 +12,8 @@
     "postinstall": "prisma generate && node scripts/copy-mediapipe.mjs",
     "db:push": "prisma db push",
     "db:postgres": "node scripts/use-postgres.mjs",
-    "seed:demo": "tsx --env-file=.env scripts/seed-demo.ts",
-    "youcam:balance": "tsx --env-file=.env scripts/youcam-balance.ts",
+    "seed:demo": "tsx --conditions=react-server --env-file=.env scripts/seed-demo.mts",
+    "youcam:balance": "tsx --conditions=react-server --env-file=.env scripts/youcam-balance.mts",
     "test": "vitest run",
     "test:e2e": "playwright test",
     "vercel-build": "node scripts/use-postgres.mjs && prisma generate && prisma db push --skip-generate && next build"

@@ -67,7 +67,9 @@ function qualityReport(b: TrialBundle) {
   const drift = counted.map((c) => Number((c.quality as { minutesFromTarget?: number } | null)?.minutesFromTarget)).filter(Number.isFinite);
   const late = drift.filter((m) => Math.abs(m) > 120).length;
   if (late) issues.push(`${late} capture(s) were more than 2h from the planned capture time.`);
-  if (counted.some((c) => c.mock)) issues.push("Some or all results are MOCK YouCam data (MOCK_YOUCAM=1), not real skin analysis.");
+  const synthetic = counted.some((c) => (c.quality as { detector?: string } | null)?.detector === "demo-seed");
+  if (synthetic) issues.push("These are synthetic demo data generated for illustration, not real measurements.");
+  else if (counted.some((c) => c.mock)) issues.push("Some or all results are MOCK YouCam data (MOCK_YOUCAM=1), not real skin analysis.");
   return { countedDays: counted.length, missedDays: missed, failedCaptures: failed, issues };
 }
 
@@ -98,7 +100,7 @@ function tools(b: TrialBundle): AgentTool[] {
       run: async () => ({
         primary: `${b.trial.primaryConcern} / ${b.trial.primaryMetric}`,
         unit: METRIC_META[b.trial.primaryMetric as keyof typeof METRIC_META].unit,
-        orientation: "positive effect = improvement",
+        orientation: `positive effect = improvement (+ = ${METRIC_META[b.trial.primaryMetric as keyof typeof METRIC_META].better})`,
         daysLogged: b.daysLogged,
         ...compactAnalysis(r),
         referenceHeadline: b.headline,
@@ -175,7 +177,7 @@ export function deterministicVerdict(b: TrialBundle): VerdictOutput {
   const est =
     r.effect === null
       ? `So far there are ${r.nBaseline} baseline and ${r.nTreatment} treatment days, below the ${r.minimums.baseline} + ${r.minimums.treatment} minimum for an honest estimate.`
-      : `The estimated change is ${fmt(r.effect)} ${meta.unit} (positive = better), with a 95% interval from ${fmt(r.ciLow!)} to ${fmt(r.ciHigh!)}.`;
+      : `The estimated change is ${fmt(r.effect)} ${meta.unit} (+ = ${meta.better}), with a 95% interval from ${fmt(r.ciLow!)} to ${fmt(r.ciHigh!)}.`;
   const meaning: Record<VerdictLabel, string> = {
     not_enough_data: "Any number shown now would mostly be noise.",
     improved: r.effect! >= r.sesoi ? "The whole interval is above zero, so this is likely a real improvement for you." : `The interval is above zero, but the estimate is smaller than the ${r.sesoi} ${meta.unit} you said would matter.`,

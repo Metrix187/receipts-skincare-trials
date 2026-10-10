@@ -234,7 +234,8 @@ async function mockProtocolAgent(input: ProtocolAgentInput, state: { side: "left
   });
 
   const secondary = (RELATED[primary] ?? []).filter((c) => c !== primary).slice(0, 2);
-  const baseline = split ? 5 : 7;
+  // A longer baseline pins down normal day-to-day variation; it caps how precise the verdict can ever get.
+  const baseline = 7;
   const treatment = Math.min(56, Math.max(14, claimDays ?? 28));
   await call("estimate_trial_cost", { concerns: [primary, ...secondary], days: baseline + treatment });
   if (split) await call("assign_treated_side", {});

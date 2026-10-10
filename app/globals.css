@@ -1,26 +1,133 @@
 @import "tailwindcss";
 
+/* Design tokens. Light + dark are both selected steps (validated chart palette:
+   series-1 blue = treated, series-2 orange = control). Theme toggle sets
+   data-theme on <html>; without it we follow the OS. */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  color-scheme: light;
+  --plane: #f6f6f3;
+  --surface: #fcfcfb;
+  --surface-2: #f0efec;
+  --line: #e4e3df;
+  --ink: #0b0b0b;
+  --ink-2: #52514e;
+  --muted: #7a7873;
+  --treated: #2a78d6;
+  --control: #eb6834;
+  --band: rgb(42 120 214 / 0.14);
+  --zone: rgb(11 11 11 / 0.05);
+  --good: #0a7d0a;
+  --warn: #9a6400;
+  --crit: #c02f2f;
+  --good-bg: #e7f4e7;
+  --warn-bg: #fbf1dc;
+  --crit-bg: #fbe9e9;
+  --neutral-bg: #efeeeb;
+  --btn: #111;
+  --btn-ink: #fff;
+  --ring: #2a78d6;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --plane: #0d0d0d;
+    --surface: #1a1a19;
+    --surface-2: #232321;
+    --line: #2f2f2c;
+    --ink: #ffffff;
+    --ink-2: #c3c2b7;
+    --muted: #8f8d87;
+    --treated: #3987e5;
+    --control: #d95926;
+    --band: rgb(57 135 229 / 0.2);
+    --zone: rgb(255 255 255 / 0.06);
+    --good: #4cc24c;
+    --warn: #f2b13c;
+    --crit: #ef6b6b;
+    --good-bg: #12260f;
+    --warn-bg: #2a2110;
+    --crit-bg: #2c1414;
+    --neutral-bg: #262624;
+    --btn: #f4f4f1;
+    --btn-ink: #0b0b0b;
+    --ring: #3987e5;
+  }
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --plane: #0d0d0d;
+  --surface: #1a1a19;
+  --surface-2: #232321;
+  --line: #2f2f2c;
+  --ink: #ffffff;
+  --ink-2: #c3c2b7;
+  --muted: #8f8d87;
+  --treated: #3987e5;
+  --control: #d95926;
+  --band: rgb(57 135 229 / 0.2);
+  --zone: rgb(255 255 255 / 0.06);
+  --good: #4cc24c;
+  --warn: #f2b13c;
+  --crit: #ef6b6b;
+  --good-bg: #12260f;
+  --warn-bg: #2a2110;
+  --crit-bg: #2c1414;
+  --neutral-bg: #262624;
+  --btn: #f4f4f1;
+  --btn-ink: #0b0b0b;
+  --ring: #3987e5;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-plane: var(--plane);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-line: var(--line);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-muted: var(--muted);
+  --color-treated: var(--treated);
+  --color-control: var(--control);
+  --color-good: var(--good);
+  --color-warn: var(--warn);
+  --color-crit: var(--crit);
+  --color-good-bg: var(--good-bg);
+  --color-warn-bg: var(--warn-bg);
+  --color-crit-bg: var(--crit-bg);
+  --color-neutral-bg: var(--neutral-bg);
+  --color-btn: var(--btn);
+  --color-btn-ink: var(--btn-ink);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  background: var(--plane);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--plane);
+  color: var(--ink);
+  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }
