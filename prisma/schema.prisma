@@ -1,0 +1,185 @@
+// SQLite for local dev. `npm run db:postgres` / the Vercel build swap the provider
+// to postgresql (scripts/use-postgres.mjs); everything below is provider-neutral.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+/// One n=1 trial of one product against one claim.
+model Trial {
+  id          String   @id @default(cuid())
+  /// Anonymous per-browser owner id (cookie). Demo trials are readable by everyone.
+  ownerId     String
+  shareSlug   String   @unique
+  isDemo      Boolean  @default(false)
+  productName String
+  brand       String?
+  claimText   String
+  /// Timeframe stated in the claim, in days ("in 4 weeks" -> 28).
+  claimDays   Int?
+  startDate   DateTime
+  /// draft -> active (protocol locked) -> complete
+  status      String   @default("draft")
+
+  // ---- Pre-registered protocol (set by the Protocol Agent, frozen at lock) ----
+  /// split_face | pre_post
+  design        String?
+  /// Subject's anatomical side that gets the product (split_face only): left | right
+  treatedSide   String?
+  baselineDays  Int?
+  treatmentDays Int?
+  washInDays    Int       @default(0)
+  tier          String    @default("sd")
+  /// ConcernKey[] sent as dst_actions (max 4 = cheapest unit tier)
+  concerns      Json?
+  primaryMetric String?
+  /// Smallest effect size of interest, in the primary metric's units
+  sesoi         Float?
+  /// Preferred capture time, local "HH:mm"
+  captureTime   String?
+  protocol      Json?
+  /// sha256 of the canonical protocol JSON at lock time
+  protocolHash  String?
+  lockedAt      DateTime?
+
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  captures     Capture[]
+  measurements Measurement[]
+  agentRuns    AgentRun[]
+  verdicts     Verdict[]
+
+  @@index([ownerId])
+}
+
+/// One selfie attempt. Only the first successful capture of a day counts.
+model Capture {
+  id           String   @id @default(cuid())
+  trialId      String
+  trial        Trial    @relation(fields: [trialId], references: [id], onDelete: Cascade)
+  dayIndex     Int
+  /// baseline | treatment
+  phase        String
+  capturedAt   DateTime @default(now())
+  /// analyzing | success | error
+  status       String
+  /// true for the first successful capture of its day (pre-registered rule: no retake-shopping)
+  counts       Boolean  @default(false)
+  /// client-side checks: luminance, sharpness, pose, timing
+  quality      Json?
+  /// normalized face geometry used for the left/right split
+  face         Json?
+  youcamFileId String?
+  youcamTaskId String?
+  ledgerId     String?
+  errorCode    String?
+  errorMessage String?
+  overall      Float?
+  skinAge      Float?
+  units        Int      @default(0)
+  mock         Boolean  @default(true)
+
+  photo        Photo?
+  measurements Measurement[]
+
+  @@index([trialId, dayIndex])
+}
+
+/// Encrypted selfie (AES-256-GCM). Separate table so photos can be wiped without touching scores.
+model Photo {
+  id         String   @id @default(cuid())
+  captureId  String   @unique
+  capture    Capture  @relation(fields: [captureId], references: [id], onDelete: Cascade)
+  ciphertext Bytes
+  iv         Bytes
+  authTag    Bytes
+  mime       String
+  width      Int
+  height     Int
+  createdAt  DateTime @default(now())
+}
+
+/// One number from one analysis: e.g. redness / ui_score / whole, or redness / mask_coverage / left.
+model Measurement {
+  id        String  @id @default(cuid())
+  trialId   String
+  trial     Trial   @relation(fields: [trialId], references: [id], onDelete: Cascade)
+  captureId String
+  capture   Capture @relation(fields: [captureId], references: [id], onDelete: Cascade)
+  concern   String
+  /// ui_score | raw_score | mask_coverage
+  metric    String
+  /// whole | left | right
+  side      String
+  region    String  @default("whole")
+  value     Float
+
+  @@index([trialId, concern, metric])
+}
+
+/// Full, replayable log of an agent run (shown in the UI as "how the agent reasoned").
+model AgentRun {
+  id           String   @id @default(cuid())
+  trialId      String?
+  trial        Trial?   @relation(fields: [trialId], references: [id], onDelete: Cascade)
+  /// protocol | verdict
+  agent        String
+  model        String
+  mock         Boolean
+  /// ok | error | overridden
+  status       String
+  input        Json
+  transcript   Json
+  output       Json?
+  error        String?
+  inputTokens  Int?
+  outputTokens Int?
+  durationMs   Int
+  createdAt    DateTime @default(now())
+}
+
+model Verdict {
+  id            String   @id @default(cuid())
+  trialId       String
+  trial         Trial    @relation(fields: [trialId], references: [id], onDelete: Cascade)
+  agentRunId    String?
+  /// Computed by lib/stats, never by the LLM:
+  /// not_enough_data | improved | worsened | no_meaningful_change | inconclusive
+  label         String
+  metric        String
+  effect        Float?
+  ciLow         Float?
+  ciHigh        Float?
+  nBaseline     Int
+  nTreatment    Int
+  daysRemaining Int?
+  headline      String
+  explanation   String
+  stats         Json
+  createdAt     DateTime @default(now())
+}
+
+/// Every YouCam task, mock or live. No FK: spending history survives trial deletion.
+model UnitLedger {
+  id           String   @id @default(cuid())
+  feature      String
+  tier         String
+  concernCount Int
+  units        Int
+  /// reserved | charged | not_charged
+  status       String
+  mock         Boolean
+  taskId       String?
+  trialId      String?
+  captureId    String?
+  note         String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([mock, status])
+}
