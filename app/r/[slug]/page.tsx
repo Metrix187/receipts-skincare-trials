@@ -51,7 +51,7 @@ async function Receipt({ params }: { params: Promise<{ slug: string }> }) {
         <section className="grid gap-1 border-b border-dashed border-line py-4 text-sm">
           <Row k="Claim" v={`“${trial.claimText}”`} />
           <Row k="Design" v={trial.design === "split_face" ? `Split-face, product on ${trial.treatedSide} side, other side as control` : "Before/after with baseline"} />
-          <Row k="Measured" v={`${meta.concernLabel}: ${meta.label.toLowerCase()} (YouCam AI Skin Analysis)`} />
+          <Row k="Measured" v={`${meta.concernLabel}: ${meta.label} (YouCam AI Skin Analysis)`} />
           <Row k="Schedule" v={`${trial.baselineDays} baseline + ${trial.treatmentDays} treatment days${trial.washInDays ? `, first ${trial.washInDays} not counted` : ""}`} />
           <Row k="Matters if" v={`≥ ${trial.sesoi} ${meta.unit} (set before day 1)`} />
         </section>

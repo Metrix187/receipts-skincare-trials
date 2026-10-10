@@ -224,7 +224,10 @@ export function analyzeTrial(input: AnalysisInput): AnalysisResult {
       resamples,
     },
     daysRemaining: { precision, timeframe, overall, note },
-    trajectory: trajectory(T, B, W, treatment.map((d) => d.day), minT, input.seed),
+    // The last trajectory point IS the primary analysis (same numbers everywhere).
+    trajectory: trajectory(T, B, W, treatment.map((d) => d.day), minT, input.seed).map((p, i, all) =>
+      i === all.length - 1 ? { ...p, effect: boot.estimate, lo: boot.ciLow, hi: boot.ciHigh } : p,
+    ),
   };
 }
 

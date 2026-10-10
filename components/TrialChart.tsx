@@ -137,7 +137,7 @@ export function TrialChart(p: TrialChartProps) {
               <text x={M.l - 6} y={yTop(t)} dy="0.32em" textAnchor="end" fontSize={11} fill="var(--muted)" className="tabular">{t}</text>
             </g>
           ))}
-          <text x={x(-0.5) + 6} y={M.t - 7} fontSize={11} fill="var(--muted)">Baseline</text>
+          {startX - x(-0.5) > 64 && <text x={x(-0.5) + 6} y={M.t - 7} fontSize={11} fill="var(--muted)">Baseline</text>}
           <line x1={startX} x2={startX} y1={M.t - 2} y2={M.t + H_TOP} stroke="var(--ink-2)" strokeWidth={1} />
           <text x={startX + 6} y={M.t - 7} fontSize={11} fill="var(--ink-2)">{split ? `Product on ${p.treatedSide} side` : "Product starts"}</text>
           {p.washInDays > 0 && <text x={washX + 6} y={M.t + 12} fontSize={10} fill="var(--muted)">wash-in ends</text>}
@@ -179,7 +179,15 @@ export function TrialChart(p: TrialChartProps) {
           {p.trajectory.length > 1 && (
             <path d={line(p.trajectory.map((t) => [x(t.day), yBot(t.effect)]))} fill="none" stroke="var(--treated)" strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
           )}
-          {lastTraj && <circle cx={x(lastTraj.day)} cy={yBot(lastTraj.effect)} r={4} fill="var(--treated)" stroke="var(--surface)" strokeWidth={2} />}
+          {lastTraj && (
+            <g>
+              {/* the latest interval as an error bar, so it's visible even with one point */}
+              <line x1={x(lastTraj.day)} x2={x(lastTraj.day)} y1={yBot(lastTraj.lo)} y2={yBot(lastTraj.hi)} stroke="var(--treated)" strokeWidth={2} strokeLinecap="round" />
+              <line x1={x(lastTraj.day) - 5} x2={x(lastTraj.day) + 5} y1={yBot(lastTraj.lo)} y2={yBot(lastTraj.lo)} stroke="var(--treated)" strokeWidth={2} strokeLinecap="round" />
+              <line x1={x(lastTraj.day) - 5} x2={x(lastTraj.day) + 5} y1={yBot(lastTraj.hi)} y2={yBot(lastTraj.hi)} stroke="var(--treated)" strokeWidth={2} strokeLinecap="round" />
+              <circle cx={x(lastTraj.day)} cy={yBot(lastTraj.effect)} r={4} fill="var(--treated)" stroke="var(--surface)" strokeWidth={2} />
+            </g>
+          )}
           {!p.trajectory.length && (
             <text x={(M.l + W - M.r) / 2} y={bTop + H_BOTTOM / 2} textAnchor="middle" fontSize={12} fill="var(--muted)">
               The estimate appears once there are enough treatment days.
