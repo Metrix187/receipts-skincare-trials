@@ -39,3 +39,17 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+!.env.example
+
+# local secrets that may sit next to the repo
+youcamkey.env*
+.mcp.json
+
+# generated
+/public/mediapipe/wasm
+/prisma/*.db
+/prisma/*.db-journal
+/prisma/schema.postgres.prisma
+/test-results
+/playwright-report
+/blob-report

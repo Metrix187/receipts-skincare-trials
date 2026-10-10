@@ -4,23 +4,50 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "prisma generate && next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "setup": "node scripts/setup-env.mjs && prisma db push && node scripts/copy-mediapipe.mjs",
+    "postinstall": "prisma generate && node scripts/copy-mediapipe.mjs",
+    "db:push": "prisma db push",
+    "db:postgres": "node scripts/use-postgres.mjs",
+    "seed:demo": "tsx --env-file=.env scripts/seed-demo.ts",
+    "youcam:balance": "tsx --env-file=.env scripts/youcam-balance.ts",
+    "test": "vitest run",
+    "test:e2e": "playwright test",
+    "vercel-build": "node scripts/use-postgres.mjs && prisma generate && prisma db push --skip-generate && next build"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.133.0",
+    "@mediapipe/tasks-vision": "^1.1.0",
+    "@prisma/client": "^6.19.3",
+    "html-to-image": "^1.11.13",
     "next": "16.4.0",
     "react": "19.3.0",
-    "react-dom": "19.3.0"
+    "react-dom": "19.3.0",
+    "server-only": "^0.0.1",
+    "sharp": "^0.35.5",
+    "zod": "^4.6.5"
   },
   "devDependencies": {
+    "@playwright/test": "^1.64.0",
     "@tailwindcss/turbopack": "^4",
-    "@types/node": "^20",
+    "@types/node": "^24.19.2",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.4.0",
+    "prisma": "^6.19.3",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "tsx": "^4.23.15",
+    "typescript": "^5",
+    "vitest": "^5.0.3"
+  },
+  "allowScripts": {
+    "@prisma/client@6.19.3": true,
+    "@prisma/engines@6.19.3": true,
+    "esbuild@0.28.2": true,
+    "prisma@6.19.3": true,
+    "unrs-resolver@1.12.2": true
   }
 }
