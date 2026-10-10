@@ -1,0 +1,26 @@
+{
+  "_source": "Verbatim example `format_json_success` from the official OpenAPI bundle, ai_skin_analysis.yaml (V2.1 GET /s2s/v2.1/task/skin-analysis/{task_id})",
+  "status": 200,
+  "data": {
+    "task_status": "success",
+    "results": {
+      "output": [
+        { "type": "hd_wrinkle", "region": "whole", "raw_score": 25.3, "ui_score": 25, "mask_urls": ["https://s3-us-west-2.amazonaws.com/yce-us/results/hd_wrinkle_whole.jpg"] },
+        { "type": "hd_wrinkle", "region": "forehead", "raw_score": 20.1, "ui_score": 20, "mask_urls": ["https://s3-us-west-2.amazonaws.com/yce-us/results/hd_wrinkle_forehead.jpg"] },
+        { "type": "hd_wrinkle", "region": "glabellar", "raw_score": 15.8, "ui_score": 16, "mask_urls": ["https://s3-us-west-2.amazonaws.com/yce-us/results/hd_wrinkle_glabellar.jpg"] },
+        { "type": "hd_wrinkle", "region": "crowfeet", "raw_score": 30.5, "ui_score": 31, "mask_urls": ["https://s3-us-west-2.amazonaws.com/yce-us/results/hd_wrinkle_crowfeet.jpg"] },
+        { "type": "hd_pore", "region": "whole", "raw_score": 35.2, "ui_score": 35, "mask_urls": ["https://s3-us-west-2.amazonaws.com/yce-us/results/hd_pore_whole.jpg"] },
+        { "type": "hd_pore", "region": "forehead", "raw_score": 30, "ui_score": 30, "mask_urls": ["https://s3-us-west-2.amazonaws.com/yce-us/results/hd_pore_forehead.jpg"] },
+        { "type": "hd_pore", "region": "nose", "raw_score": 45.7, "ui_score": 46, "mask_urls": ["https://s3-us-west-2.amazonaws.com/yce-us/results/hd_pore_nose.jpg"] },
+        { "type": "hd_pore", "region": "cheek", "raw_score": 32.1, "ui_score": 32, "mask_urls": ["https://s3-us-west-2.amazonaws.com/yce-us/results/hd_pore_cheek.jpg"] },
+        { "type": "hd_acne", "region": "whole", "raw_score": 12.5, "ui_score": 13, "mask_urls": ["https://s3-us-west-2.amazonaws.com/yce-us/results/hd_acne_whole.jpg"] },
+        { "type": "hd_skin_type", "region": "whole", "skin_type": "Combination", "mask_urls": ["https://s3-us-west-2.amazonaws.com/yce-us/results/hd_skin_type_whole.jpg"] },
+        { "type": "hd_skin_type", "region": "t_zone", "skin_type": "Oily", "mask_urls": ["https://s3-us-west-2.amazonaws.com/yce-us/results/hd_skin_type_t_zone.jpg"] },
+        { "type": "hd_skin_type", "region": "u_zone", "skin_type": "Dry & Redness", "mask_urls": ["https://s3-us-west-2.amazonaws.com/yce-us/results/hd_skin_type_u_zone.jpg"] },
+        { "type": "skin_age", "score": 29 },
+        { "type": "all", "score": 28.5 },
+        { "type": "resize_image", "mask_urls": ["https://s3-us-west-2.amazonaws.com/yce-us/results/resized_image.jpg"] }
+      ]
+    }
+  }
+}

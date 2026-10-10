@@ -1,0 +1,16 @@
+{
+  "status": 200,
+  "result": {
+    "skus": [
+      { "description": "AI Skin Analysis V2.1 HD (1-4 concerns)", "amount": 12, "unit": "result_image", "proc_unit": 1, "run_task_url": "https://yce-api-01.makeupar.com/s2s/v2.1/task/skin-analysis" },
+      { "description": "AI Skin Analysis V2.1 HD (5-8 concerns)", "amount": 16, "unit": "result_image", "proc_unit": 1, "run_task_url": "https://yce-api-01.makeupar.com/s2s/v2.1/task/skin-analysis" },
+      { "description": "AI Skin Analysis V2.1 HD (9-12 concerns)", "amount": 20, "unit": "result_image", "proc_unit": 1, "run_task_url": "https://yce-api-01.makeupar.com/s2s/v2.1/task/skin-analysis" },
+      { "description": "AI Skin Analysis V2.1 HD (13-16 concerns)", "amount": 22, "unit": "result_image", "proc_unit": 1, "run_task_url": "https://yce-api-01.makeupar.com/s2s/v2.1/task/skin-analysis" },
+      { "description": "AI Skin Analysis V2.1 SD (1-4 concerns)", "amount": 9, "unit": "result_image", "proc_unit": 1, "run_task_url": "https://yce-api-01.makeupar.com/s2s/v2.1/task/skin-analysis" },
+      { "description": "AI Skin Analysis V2.1 SD (5-8 concerns)", "amount": 12, "unit": "result_image", "proc_unit": 1, "run_task_url": "https://yce-api-01.makeupar.com/s2s/v2.1/task/skin-analysis" },
+      { "description": "AI Skin Analysis V2.1 SD (9-12 concerns)", "amount": 14, "unit": "result_image", "proc_unit": 1, "run_task_url": "https://yce-api-01.makeupar.com/s2s/v2.1/task/skin-analysis" },
+      { "description": "AI Skin Analysis V2.1 SD (13-16 concerns)", "amount": 16, "unit": "result_image", "proc_unit": 1, "run_task_url": "https://yce-api-01.makeupar.com/s2s/v2.1/task/skin-analysis" }
+    ],
+    "next_token": null
+  }
+}
