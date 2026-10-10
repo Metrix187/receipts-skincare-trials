@@ -11,6 +11,7 @@
 
 import { concernFromAction, isHdAction } from "./concerns";
 import type { FetchLike } from "./client";
+import { fnv1a, prng } from "@/lib/rng";
 import featureCostFixture from "./fixtures/feature-cost.json";
 
 const UPLOAD_HOST = "https://mock-upload.youcam.local";
@@ -30,28 +31,6 @@ const b64 = {
   enc: (o: unknown) => Buffer.from(JSON.stringify(o)).toString("base64url"),
   dec: <T>(s: string): T => JSON.parse(Buffer.from(s, "base64url").toString("utf8")) as T,
 };
-
-/** FNV-1a 32-bit: tiny deterministic hash for seeding. */
-export function fnv1a(s: string) {
-  let h = 0x811c9dc5;
-  for (let i = 0; i < s.length; i++) {
-    h ^= s.charCodeAt(i);
-    h = Math.imul(h, 0x01000193);
-  }
-  return h >>> 0;
-}
-
-/** mulberry32 PRNG. */
-export function prng(seed: number) {
-  let a = seed >>> 0;
-  return () => {
-    a = (a + 0x6d2b79f5) >>> 0;
-    let t = a;
-    t = Math.imul(t ^ (t >>> 15), t | 1);
-    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
 
 // Typical population-ish ui_score centers, so mock dashboards look plausible.
 const BASE_SCORE: Record<string, number> = {
