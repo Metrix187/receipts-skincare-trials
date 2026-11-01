@@ -14,6 +14,7 @@ const Face = z.object({
   box: z.object({ x: z.number().min(0).max(1), y: z.number().min(0).max(1), w: z.number().gt(0).max(1), h: z.number().gt(0).max(1) }),
   midlineX: z.number().min(0).max(1),
   rollDeg: z.number().optional(),
+  roiVersion: z.literal(2).optional(),
 });
 
 /**

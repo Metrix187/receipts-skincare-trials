@@ -102,8 +102,17 @@ export async function resolveCapture(captureId: string, opts: { timeoutMs?: numb
 
   // Split-face: per-side coverage from each split-able concern's whole-face mask.
   const notes: string[] = [];
+  let effectiveFace: FaceGeometry | null = null;
   if (trial.design === "split_face" && capture.face) {
-    const face = capture.face as unknown as FaceGeometry;
+    const face = { ...(capture.face as unknown as FaceGeometry) };
+    // Existing trials must keep the same sampling rule throughout their series.
+    // Old captures have no version marker and therefore use the original boxes.
+    const first = await db.capture.findFirst({
+      where: { trialId: trial.id, status: "success", counts: true, NOT: { id: captureId } },
+      orderBy: { dayIndex: "asc" }, select: { face: true },
+    });
+    if (first) face.roiVersion = (first.face as unknown as FaceGeometry | null)?.roiVersion === 2 ? 2 : 1;
+    effectiveFace = face;
     const targets = result.scores.filter(
       (s) => s.region === "whole" && s.maskUrls.length > 0 && concern(s.concern as ConcernKey).splitFaceOk,
     );
@@ -131,6 +140,7 @@ export async function resolveCapture(captureId: string, opts: { timeoutMs?: numb
       where: { id: captureId },
       data: {
         status: "success",
+        ...(effectiveFace ? { face: effectiveFace as unknown as object } : {}),
         counts: alreadyCounted === 0,
         overall: result.overall,
         skinAge: result.skinAge,

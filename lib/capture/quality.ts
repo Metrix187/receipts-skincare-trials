@@ -215,6 +215,7 @@ export function cropAroundFace(f: FaceDetection, frame: { w: number; h: number }
 export function faceInCrop(f: FaceDetection, crop: { x: number; y: number; w: number; h: number }) {
   const { midlineX, rollDeg } = poseOf(f);
   return {
+    roiVersion: 2 as const,
     box: {
       x: clamp01((f.box.x - crop.x) / crop.w),
       y: clamp01((f.box.y - crop.y) / crop.h),

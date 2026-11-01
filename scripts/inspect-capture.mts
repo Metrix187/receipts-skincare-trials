@@ -3,7 +3,9 @@
 // coverage, and an overlay image showing exactly which pixels were measured.
 // Mask URLs are pre-signed and expire (~24h), so run this soon after the capture.
 //
-//   npm run inspect:capture [-- <captureId>] [-- --out <dir>]
+//   npm run inspect:capture -- [captureId] --out <private-directory>
+// WARNING: this developer-only tool writes decrypted photographs and masks.
+// Deleting photos in the app does not delete copies you deliberately export.
 
 const { db } = await import("@/lib/db");
 const { decryptBytes, parseKey } = await import("@/lib/crypto");
@@ -16,7 +18,11 @@ type Score = { concern: string; action: string; region: string; uiScore: number 
 
 const args = process.argv.slice(2);
 const outIdx = args.indexOf("--out");
-const out = resolve(outIdx > -1 ? args[outIdx + 1] : "inspect-out");
+if (outIdx < 0 || !args[outIdx + 1] || args[outIdx + 1].startsWith("--")) {
+  console.error("Specify --out <private-directory>; inspection exports decrypted photos and masks.");
+  process.exit(1);
+}
+const out = resolve(args[outIdx + 1]);
 const id = args.find((a, i) => !a.startsWith("--") && i !== outIdx + 1);
 
 const capture = await db.capture.findFirst({
@@ -29,7 +35,7 @@ if (!capture) {
   process.exit(1);
 }
 mkdirSync(out, { recursive: true });
-const face = capture.face as { box: { x: number; y: number; w: number; h: number }; midlineX: number; rollDeg: number };
+const face = capture.face as { box: { x: number; y: number; w: number; h: number }; midlineX: number; rollDeg: number; roiVersion?: 1 | 2 };
 const result = capture.youcamResult as { taskId: string; scores: Score[]; overall: number | null; skinAge: number | null } | null;
 
 console.log(`capture ${capture.id} · day ${capture.dayIndex} · ${capture.status} · units ${capture.units} · mock=${capture.mock}`);
@@ -81,7 +87,9 @@ for (const s of result?.scores ?? []) {
     }
     const { imageLeft, imageRight } = cheekRegions(face);
     const r = (q: { x0: number; x1: number; y0: number; y1: number }, color: string, label: string) =>
-      `<rect x="${q.x0 * pw}" y="${q.y0 * ph}" width="${(q.x1 - q.x0) * pw}" height="${(q.y1 - q.y0) * ph}" fill="none" stroke="${color}" stroke-width="4"/>` +
+      (face.roiVersion === 2
+        ? `<ellipse cx="${(q.x0 + q.x1) * pw / 2}" cy="${(q.y0 + q.y1) * ph / 2}" rx="${(q.x1 - q.x0) * pw / 2}" ry="${(q.y1 - q.y0) * ph / 2}" fill="none" stroke="${color}" stroke-width="4"/>`
+        : `<rect x="${q.x0 * pw}" y="${q.y0 * ph}" width="${(q.x1 - q.x0) * pw}" height="${(q.y1 - q.y0) * ph}" fill="none" stroke="${color}" stroke-width="4"/>`) +
       `<text x="${q.x0 * pw + 8}" y="${q.y0 * ph + 28}" font-size="26" fill="${color}" font-family="sans-serif">${label}</text>`;
     const b = face.box;
     const svg = `<svg width="${pw}" height="${ph}" xmlns="http://www.w3.org/2000/svg">

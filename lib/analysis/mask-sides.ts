@@ -24,6 +24,8 @@ export interface FaceGeometry {
   /** Normalized x of the facial midline (eye midpoint / nose tip). */
   midlineX: number;
   rollDeg?: number;
+  /** Version 2 uses compact elliptical upper-cheek sampling patches. */
+  roiVersion?: 1 | 2;
 }
 
 export interface SideCoverage {
@@ -37,6 +39,18 @@ export interface SideCoverage {
 /** Cheek band: below the eyes, above the jaw, excluding a strip over the nose. */
 export function cheekRegions(face: FaceGeometry) {
   const { box } = face;
+  if (face.roiVersion === 2) {
+    // Conservative upper-cheek patches: smaller than the face detector box, and
+    // intentionally clear of the central nose and lower mouth/jaw. These are
+    // geometric approximations, not validated skin segmentation.
+    const top = box.y + box.h * 0.43;
+    const bottom = box.y + box.h * 0.65;
+    const center = face.midlineX;
+    return {
+      imageLeft: { x0: box.x + box.w * 0.16, x1: Math.min(box.x + box.w * 0.39, center - box.w * 0.11), y0: top, y1: bottom },
+      imageRight: { x0: Math.max(box.x + box.w * 0.61, center + box.w * 0.11), x1: box.x + box.w * 0.84, y0: top, y1: bottom },
+    };
+  }
   const top = box.y + box.h * 0.42;
   const bottom = box.y + box.h * 0.88;
   const noseHalf = box.w * 0.07;
@@ -70,6 +84,13 @@ export async function maskCoverageBySide(mask: Uint8Array, face: FaceGeometry): 
     let n = 0;
     for (let y = y0; y < y1; y++) {
       for (let x = x0; x < x1; x++) {
+        // V2 samples an ellipse inside the bounding rectangle; do not include
+        // its corners, which are more likely to contain hair or facial features.
+        if (face.roiVersion === 2) {
+          const dx = (x + 0.5 - (x0 + x1) / 2) / ((x1 - x0) / 2);
+          const dy = (y + 0.5 - (y0 + y1) / 2) / ((y1 - y0) / 2);
+          if (dx * dx + dy * dy > 1) continue;
+        }
         sum += intensity((y * W + x) * channels);
         n++;
       }

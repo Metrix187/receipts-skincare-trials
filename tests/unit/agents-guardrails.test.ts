@@ -104,4 +104,16 @@ describe("mask split", () => {
     expect(cov.channel).toBe("luma");
     expect(cov.left).toBeGreaterThan(cov.right);
   });
+
+  it("v2 excludes mask signals in the mouth and nose region", async () => {
+    const W = 200;
+    const px = new Uint8Array(W * W * 4);
+    // Mark only the central mouth/nose area that the legacy boxes overlapped.
+    for (let y = 130; y < 150; y++) for (let x = 75; x < 125; x++) px[(y * W + x) * 4 + 3] = 255;
+    const png = new Uint8Array(await sharp(Buffer.from(px), { raw: { width: W, height: W, channels: 4 } }).png().toBuffer());
+    const legacy = await maskCoverageBySide(png, face);
+    const compact = await maskCoverageBySide(png, { ...face, roiVersion: 2 });
+    expect(legacy.whole).toBeGreaterThan(0);
+    expect(compact.whole).toBe(0);
+  });
 });

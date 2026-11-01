@@ -30,6 +30,17 @@ export async function readPhoto(captureId: string) {
 
 /** One-click wipe: deletes every stored selfie for a trial. Scores are kept. */
 export async function deleteTrialPhotos(trialId: string) {
-  const res = await db.photo.deleteMany({ where: { capture: { trialId } } });
-  return res.count;
+  return db.$transaction(async (tx) => {
+    const captures = await tx.capture.findMany({ where: { trialId }, select: { id: true, youcamResult: true } });
+    for (const capture of captures) {
+      const result = capture.youcamResult as { scores?: Array<Record<string, unknown>>; [key: string]: unknown } | null;
+      if (!result || !Array.isArray(result.scores)) continue;
+      // Signed mask URLs can reveal derived images. Forget them with the photos;
+      // numerical measurements and the verdict remain available.
+      const scores = result.scores.map((score) => ({ ...score, maskUrls: [] }));
+      await tx.capture.update({ where: { id: capture.id }, data: { youcamResult: { ...result, scores } as object } });
+    }
+    const res = await tx.photo.deleteMany({ where: { capture: { trialId } } });
+    return res.count;
+  });
 }
