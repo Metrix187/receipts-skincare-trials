@@ -1,5 +1,7 @@
 # Receipts
 
+To configure Claude locally, open **Settings → Set Claude API key** and paste an Anthropic API key into the dialog. It is saved in the gitignored `.env.local` file on this computer; the dialog is available only in local development. On Vercel, set `ANTHROPIC_API_KEY` in the deployment environment instead. Live agent requests can incur Anthropic charges.
+
 **Is your skincare actually working?** Receipts runs an honest *n=1 trial* of a product on your own face and gives you a statistically defensible answer instead of vibes.
 
 An agent designs the experiment (often product on **one side of your face only**, so the other side is a built-in control), [YouCam AI Skin Analysis](https://yce.perfectcorp.com/ai-api) measures you once a day, and a pre-registered analysis produces a verdict with its uncertainty. When there isn't enough data, it says so: *"No detectable change in hydration after 21 days; 14 more needed to rule out a small effect."*

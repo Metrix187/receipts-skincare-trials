@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { connection } from "next/server";
 import { Suspense } from "react";
+import { ClaudeKeyDialog } from "@/components/ClaudeKeyDialog";
 import { UnitBalance } from "@/components/UnitBalance";
 import { Card, CardTitle, Skeleton } from "@/components/ui";
 import { envStatus } from "@/lib/env";
@@ -11,7 +12,7 @@ export const metadata: Metadata = { title: "Settings" };
 export default function SettingsPage() {
   return (
     <div className="space-y-5">
-      <h1 className="text-2xl font-semibold tracking-tight">Settings</h1>
+      <div className="flex flex-wrap items-center justify-between gap-3"><h1 className="text-2xl font-semibold tracking-tight">Settings</h1><ClaudeKeyDialog /></div>
       <Suspense fallback={<Skeleton className="h-64" />}>
         <Status />
       </Suspense>

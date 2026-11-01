@@ -3,6 +3,21 @@ import { expect, test } from "@playwright/test";
 
 const selfie = resolve(__dirname, "fixtures/selfie.jpg");
 
+test("Claude key dialog submits privately and clears on close", async ({ page }) => {
+  await page.route("**/api/settings/claude-key", async (route) => {
+    expect(route.request().postDataJSON()).toEqual({ key: "sk-ant-testkey123456789" });
+    await route.fulfill({ json: { ok: true } });
+  });
+  await page.goto("/settings");
+  await page.getByRole("button", { name: "Set Claude API key" }).click();
+  const input = page.getByLabel("Anthropic API key");
+  await input.fill("sk-ant-testkey123456789");
+  await page.getByRole("button", { name: "Save key" }).click();
+  await expect(page.getByRole("dialog")).not.toBeVisible();
+  await page.getByRole("button", { name: "Set Claude API key" }).click();
+  await expect(input).toHaveValue("");
+});
+
 test("capture -> analyze -> verdict (mock mode)", async ({ page }) => {
   // 1. New trial -> Protocol Agent (mock) designs it
   await page.goto("/trials/new");

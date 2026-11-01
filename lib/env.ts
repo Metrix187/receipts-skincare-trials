@@ -27,17 +27,13 @@ export type Env = z.infer<typeof schema> & {
   agentsMock: boolean;
 };
 
-let cached: Env | null = null;
-
 export function env(): Env {
-  if (cached) return cached;
   const parsed = schema.parse(process.env);
-  cached = {
+  return {
     ...parsed,
     youcamMock: parsed.MOCK_YOUCAM || !parsed.YOUCAM_API_KEY,
     agentsMock: parsed.MOCK_AGENTS || !parsed.ANTHROPIC_API_KEY,
   };
-  return cached;
 }
 
 /** Status for the settings page. Never exposes secret values. */
