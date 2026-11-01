@@ -9,6 +9,15 @@
 // B: oral collagen vs hydration (pre/post): no effect, 21 of 35 planned days logged.
 
 if (!process.argv.includes("--live-agents")) process.env.MOCK_AGENTS = "1";
+else if (!process.env.ANTHROPIC_API_KEY) {
+  // The UI's local setup dialog stores the key in .env.local. Node's --env-file
+  // only loaded .env for this standalone script, so load that one field here.
+  const { readFileSync } = await import("node:fs");
+  try {
+    const local = readFileSync(".env.local", "utf8");
+    process.env.ANTHROPIC_API_KEY = local.match(/^ANTHROPIC_API_KEY=(sk-ant-[A-Za-z0-9_-]+)\s*$/m)?.[1] ?? "";
+  } catch { /* .env.local is optional */ }
+}
 
 const { db } = await import("@/lib/db");
 const { canonicalHash } = await import("@/lib/crypto");

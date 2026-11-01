@@ -4,7 +4,7 @@ To configure Claude locally, open **Settings → Set Claude API key** and paste 
 
 **Is your skincare actually working?** Receipts runs an honest *n=1 trial* of a product on your own face and gives you a statistically defensible answer instead of vibes.
 
-An agent designs the experiment (often product on **one side of your face only**, so the other side is a built-in control), [YouCam AI Skin Analysis](https://yce.perfectcorp.com/ai-api) measures you once a day, and a pre-registered analysis produces a verdict with its uncertainty. When there isn't enough data, it says so: *"No detectable change in hydration after 21 days; 14 more needed to rule out a small effect."*
+An agent designs the experiment (often product on **one side of your face only**, so the other side is a built-in control), [YouCam AI Skin Analysis](https://yce.perfectcorp.com/ai-api) measures you once a day, and a pre-registered analysis produces a verdict with its uncertainty. When there isn't enough data, it says so: *"Not enough data yet"* or an explicitly provisional estimate.
 
 Built for the YouCam API Skin AI & eCommerce VTO Hackathon. MIT licensed.
 
@@ -26,13 +26,13 @@ Built for the YouCam API Skin AI & eCommerce VTO Hackathon. MIT licensed.
    It also checks the YouCam unit cost and validates its own draft against the design rules. The treated side is **randomized server-side**, never chosen by the model.
 3. **You lock it.** The protocol is frozen and hashed before day 1 (pre-registration). The metric, threshold and analysis can't be tuned after seeing data.
 4. **Daily capture.** An in-browser face detector and consistency checks run *before any upload*: framing, resolution, pose, brightness, left/right lighting evenness, focus, drift from your usual brightness, and time of day. Bad photos never cost units. The photo is cropped to the face, encrypted at rest, and sent only to YouCam.
-5. **YouCam AI Skin Analysis** returns concern scores and detection masks. For split-face trials Receipts measures **each cheek** from the masks.
+5. **YouCam AI Skin Analysis** returns concern scores and detection masks. For split-face trials Receipts samples mask intensity in two approximate cheek patches. This is an experimental proxy, not a validated skin or product-effect measurement.
 6. **The Verdict Agent** reads the series through tools. It can run the locked analysis, but **it can't change it**. Its label must match the computed one and its wording can't overclaim, or its submission is rejected and it has to try again.
 7. **Receipt.** A one-screen summary with the chart and verdict, shareable by link and exportable as PNG.
 
 ## What YouCam APIs we use and why
 
-All calls go to `https://yce-api-01.makeupar.com` with `Authorization: Bearer <YOUCAM_API_KEY>`. Shapes are from the official OpenAPI bundle (`ai_skin_analysis.yaml`, V2.1) and were checked against the live API (free endpoints only).
+All calls go to `https://yce-api-01.makeupar.com` with `Authorization: Bearer <YOUCAM_API_KEY>`. Shapes are from the official OpenAPI bundle (`ai_skin_analysis.yaml`, V2.1). The file upload, task, polling, JSON scores and PNG masks were also exercised with one real, consented 9-unit analysis.
 
 | Endpoint | Why | Units |
 |---|---|---|
@@ -45,7 +45,7 @@ All calls go to `https://yce-api-01.makeupar.com` with `Authorization: Bearer <Y
 
 **Why AI Skin Analysis:** it turns a phone selfie into repeatable, per-concern numbers (redness, acne, pores, texture, hydration…), which is exactly what a daily time series needs.
 
-**Why masks matter:** YouCam's scores are whole-face. A split-face trial needs a per-side number, so Receipts downloads each concern's detection mask and measures **the share of each cheek region flagged**. The facial midline comes from the in-browser face detector. One API call per day is enough, instead of two calls on mirrored half-faces.
+**Why masks matter:** YouCam's scores are whole-face. A split-face trial needs a per-side number, so Receipts downloads each concern's detection mask and takes the mean mask intensity in small approximate elliptical upper-cheek patches (0–100). This is not necessarily a percentage of skin affected: mask opacity is not a clinical area measurement. The facial midline comes from the in-browser face detector. One API call per day is enough, instead of two calls on mirrored half-faces.
 
 **Unit budget:** a 21-day trial at SD with ≤4 concerns costs **21 × 9 = 189 units**. Retakes rejected on-device, and YouCam tasks that end in `error`, cost nothing. Every task goes through a ledger (`reserved → charged / not_charged`), and live tasks are refused past `YOUCAM_UNIT_BUDGET`. Task creation is never retried on 5xx, because a duplicate task would be billed twice.
 
@@ -61,7 +61,7 @@ flowchart LR
     C --> D[AES-256-GCM photo store]
     C --> E["YouCamClient<br/>retry · backoff · ledger · budget guard"]
     E -->|MOCK_YOUCAM=1| M[("Stateless mock transport<br/>same wire format, real PNG masks")]
-    E --> F["Mask split<br/>per-cheek coverage"]
+    E --> F["Mask split<br/>experimental cheek-patch intensity"]
     F --> G[("Prisma: Trial · Capture · Photo<br/>Measurement · AgentRun · Verdict · UnitLedger")]
     H[Protocol Agent] -->|"tools: metrics, cost, randomize side, check, submit"| G
     I[Verdict Agent] -->|"tools: protocol, quality, locked analysis, submit"| G
@@ -77,13 +77,13 @@ flowchart LR
 - **YouCam client** (`lib/youcam/`): typed, with injectable `fetch` / `sleep`. The mock sits at the HTTP layer, so mock mode runs the real upload, polling, retry, ledger and normalization code. Mock IDs carry their own state, so it survives serverless cold starts.
 - **Stats** (`lib/stats/`): pure functions, no I/O, seeded, so verdicts don't wobble on refresh.
 
-## The statistics (and why you can trust them)
+## Statistics and limitations
 
-- **Estimand.** Pre/post: mean(treatment days) − mean(baseline days). Split-face: the daily difference *treated − control* from the same photo, so shared lighting and day-to-day swings cancel, minus the same difference at baseline, which removes your face's natural asymmetry. Effects are oriented so **+ = better**. Pre-registered wash-in days are excluded from the effect.
+- **Estimand.** Pre/post: mean(treatment days) − mean(baseline days). Split-face: the daily difference *treated − control* from the same photo, which can reduce, but does not eliminate, shared lighting and day-to-day noise, minus the same difference at baseline, which removes your face's natural asymmetry. Effects are oriented so **+ = better**. Pre-registered wash-in days are excluded from the effect.
 - **Interval.** An AR(1)-sieve bootstrap (Bühlmann 1997) with a Student-t interval. Daily skin readings are autocorrelated, so treating days as independent would make intervals falsely narrow. The day-to-day carry-over φ is estimated from every logged day, with the Marriott–Pope small-sample bias correction applied per segment.
-- **We tested it.** `tests/unit/stats.test.ts` simulates hundreds of trials with a known effect and AR(1) noise and checks that 95% intervals really cover the truth (≥ 90%), plus a hard case (7 + 7 days, φ = 0.45, ≥ 88%). A moving-block bootstrap only reached about 79% on this test and was replaced (see the git history).
-- **Decision rule, fixed in advance.** 95% CI entirely above 0 → *improved*; entirely below → *worsened*; inside ±SESOI → *no meaningful change*; otherwise → *inconclusive*; below the minimum days → *not enough data*. One primary metric, one test. Secondary concerns are descriptive only.
-- **"N more days".** A precision projection: the treatment days needed for a 95% half-width of 0.7 × SESOI, which gives 80% power to detect the SESOI. If the fixed baseline alone is too noisy to ever get there, it says so instead of inventing a number. It also reports the days left until the claim's own timeframe.
+- **We tested it.** `tests/unit/stats.test.ts` simulates hundreds of trials with a known effect and AR(1) noise and checks coverage under selected simulations (≥ 90%, not a guarantee of 95% coverage on real faces), plus a hard case (7 + 7 days, φ = 0.45, ≥ 88%). A moving-block bootstrap only reached about 79% on this test and was replaced (see the git history).
+- **Decision rule, fixed in advance.** Interim daily estimates are exploratory; classifications are deferred until the locked treatment endpoint, and later days are excluded from that analysis. At the endpoint, 95% CI entirely above 0 → *improved*; entirely below → *worsened*; inside ±SESOI → *no meaningful change*; otherwise → *inconclusive*; below the minimum days → *not enough data*. One primary metric, one test. Secondary concerns are descriptive only.
+- **"N more days".** Before the pre-registered endpoint, this is time remaining in the planned schedule, not a promise of statistical power. After the endpoint, more days are not automatically folded into the locked analysis; an inconclusive result stays inconclusive.
 - **No retake shopping.** Only the first successful photo of each day counts.
 
 ## Setup
@@ -93,7 +93,7 @@ Requires Node 22+ (tested on 24).
 ```bash
 npm install
 npm run setup        # writes .env (imports keys from ../youcamkey.env if present), creates the SQLite DB
-npm run seed:demo    # two finished 21-day demo trials (synthetic data, clearly labeled)
+npm run seed:demo    # two synthetic 21-day histories: one finished, one interim
 npm run dev          # http://localhost:3000  (/demo jumps to the split-face demo)
 ```
 
@@ -126,6 +126,8 @@ The Settings page shows what's configured (masked), the unit ledger, and a free 
 
 ## Deploying (Vercel + Neon Postgres)
 
+**Prototype security:** The anonymous browser cookie is not authentication. A public deployment is suitable for synthetic demo data, not sensitive personal trials, until authenticated accounts, authorization, rate limits and production security review are added. The local key setup dialog is disabled server-side on deployed instances; configure deployment secrets through Vercel instead.
+
 1. Create a Neon database through Vercel's Neon integration. It sets `DATABASE_URL` (pooled) and `DATABASE_URL_UNPOOLED`.
 2. Set the env vars above in Vercel. Generate `PHOTO_ENCRYPTION_KEY` with `node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"`.
 3. Vercel runs `npm run vercel-build`, which swaps the Prisma provider to Postgres (`scripts/use-postgres.mjs`), pushes the schema, and builds.
@@ -143,12 +145,14 @@ The schema is provider-neutral (no enums, JSON and Bytes work on both), so SQLit
 
 ## Privacy
 
-- Selfies are encrypted at rest with AES-256-GCM, each bound to its capture row. They are sent **only to YouCam**. The agents receive numbers, never photos.
+- Selfies are encrypted at rest with AES-256-GCM, each bound to its capture row. They are sent **only to YouCam**. The agents receive product and claim text, measurements, and statistics, never photos. Deleting photos also clears saved mask URLs; it cannot erase files already sent to YouCam.
 - Face detection runs on-device. The MediaPipe runtime and model are served from this app, not a CDN. Fonts are self-hosted at build time.
 - One click deletes every photo for a trial (scores remain). "Delete trial" removes everything. No accounts: an anonymous per-browser cookie scopes your trials. Receipts are shared by unguessable link and contain no photos.
 - Not medical advice.
 
 ## Developing with YouCam's MCP server and skill
+
+The optional `npm run inspect:capture -- --out <private-directory>` developer tool exports a decrypted copy of a photograph and its derived masks for manual inspection. These exported copies are outside the app's photo-deletion feature and must be managed separately; do not include them in a submission repository.
 
 YouCam ships a remote MCP server (`https://mcp-api-01.makeupar.com/mcp/beauty`, Bearer auth, 47 tools including `AI-Skin-Analysis` and `Get-Feature-Cost`) and an official [`skin-analysis-expert`](https://github.com/YouCam-API/skills) agent skill. The workspace this repo was built in has both configured (`.mcp.json` and `.claude/skills/`, outside the repo because they hold the key). To add them yourself in Claude Code:
 
@@ -159,7 +163,7 @@ claude mcp add --transport http youcam-beauty https://mcp-api-01.makeupar.com/mc
 ## Honest limitations
 
 - One person, AI-estimated scores. Receipts tests the product **on you**, not in general.
-- The mask format of live responses (alpha vs opaque) is handled both ways and unit-tested, but the per-cheek region geometry should be sanity-checked against a few real masks.
+- The mask format was verified on one live capture, but the cheek patches and mask-intensity metric remain experimental and have not been validated across faces, skin tones, facial hair, lighting, products, or claims. Older trials retain their original wider sampling regions and should not be compared with new trials.
 - Pre/post designs can't separate a treatment effect from a slow drift (season, routine changes). That's why split-face is preferred whenever possible, and why the verdict flags lighting drift between phases.
 
 ## License
