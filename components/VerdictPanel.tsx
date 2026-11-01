@@ -24,7 +24,7 @@ export function VerdictPanel({ bundle: b, canEdit }: { bundle: TrialBundle; canE
       {fresh && <p className="mt-2 text-sm leading-relaxed text-ink-2">{v!.explanation}</p>}
 
       <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-4">
-        <Stat label="Effect (+ = better)" value={r.effect == null ? "–" : `${fmt(r.effect)} ${b.meta.unit}`} />
+        <Stat label={b.trial.design === "split_face" ? "Effect (+ = lower proxy)" : "Effect (+ = higher score)"} value={r.effect == null ? "–" : `${fmt(r.effect)} ${b.meta.unit}`} />
         <Stat label="95% interval" value={r.ciLow == null ? "–" : `${fmt(r.ciLow)} to ${fmt(r.ciHigh)}`} />
         <Stat label="Days analyzed" value={`${r.nBaseline} + ${r.nTreatment}`} hint={r.nExcludedWashIn ? `${r.nExcludedWashIn} wash-in excluded` : "baseline + treatment"} />
         <Stat

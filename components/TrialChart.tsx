@@ -118,7 +118,7 @@ export function TrialChart(p: TrialChartProps) {
     <figure className="m-0">
       <figcaption className="mb-2 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
         <span className="text-sm font-medium text-ink">{p.title}</span>
-        <span className="text-xs text-muted">{p.higherIsBetter ? "higher is better" : "lower is better"}</span>
+        <span className="text-xs text-muted">{split ? "lower mask intensity" : p.higherIsBetter ? "higher score" : "lower score"}</span>
       </figcaption>
       {split && (
         <div className="mb-2 flex gap-4 text-xs text-ink-2" aria-label="Legend">
@@ -166,7 +166,7 @@ export function TrialChart(p: TrialChartProps) {
 
           {/* ---- bottom panel: effect so far ---- */}
           <text x={M.l} y={bTop - 12} fontSize={12} fontWeight={500} fill="var(--ink)">Effect so far, with 95% interval</text>
-          <text x={W - M.r + 8} y={yBot(bot.hi)} dy="0.9em" fontSize={11} fill="var(--muted)">↑ better</text>
+          <text x={W - M.r + 8} y={yBot(bot.hi)} dy="0.9em" fontSize={11} fill="var(--muted)">{split ? "↑ lower proxy" : "↑ higher score"}</text>
           <rect x={M.l} y={yBot(p.sesoi)} width={W - M.l - M.r} height={yBot(-p.sesoi) - yBot(p.sesoi)} fill="var(--zone)" />
           {botTicks.map((t) => (
             <text key={`bt${t}`} x={M.l - 6} y={yBot(t)} dy="0.32em" textAnchor="end" fontSize={11} fill="var(--muted)" className="tabular">{t > 0 ? `+${t}` : t}</text>
