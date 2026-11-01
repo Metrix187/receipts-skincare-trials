@@ -17,6 +17,7 @@ const schema = z.object({
   ANTHROPIC_MODEL: z.string().optional().default("claude-opus-5-5"),
   ANTHROPIC_EFFORT: z.enum(["low", "medium", "high", "xhigh", "max"]).optional().default("medium"),
   MOCK_AGENTS: flag,
+  RECEIPTS_PUBLIC_DEMO: flag,
   PHOTO_ENCRYPTION_KEY: z.string().optional().default(""),
 });
 
@@ -31,8 +32,8 @@ export function env(): Env {
   const parsed = schema.parse(process.env);
   return {
     ...parsed,
-    youcamMock: parsed.MOCK_YOUCAM || !parsed.YOUCAM_API_KEY,
-    agentsMock: parsed.MOCK_AGENTS || !parsed.ANTHROPIC_API_KEY,
+    youcamMock: parsed.RECEIPTS_PUBLIC_DEMO || parsed.MOCK_YOUCAM || !parsed.YOUCAM_API_KEY,
+    agentsMock: parsed.RECEIPTS_PUBLIC_DEMO || parsed.MOCK_AGENTS || !parsed.ANTHROPIC_API_KEY,
   };
 }
 

@@ -12,6 +12,7 @@ export default function Home() {
   return (
     <div className="space-y-8">
       <section className="pt-2">
+        {process.env.RECEIPTS_PUBLIC_DEMO === "1" && <p className="mb-4 rounded-xl bg-warn-bg p-3 text-sm text-warn">Public demo: synthetic data and mock agents only. Do not enter private information; personal photo uploads are disabled.</p>}
         <h1 className="text-3xl font-semibold tracking-tight text-balance sm:text-4xl">Is it actually working?</h1>
         <p className="mt-3 max-w-prose text-[15px] leading-relaxed text-ink-2">
           Receipts runs an honest n=1 trial of your skincare. An agent designs the experiment (often product on one

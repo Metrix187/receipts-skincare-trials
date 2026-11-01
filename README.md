@@ -128,6 +128,12 @@ The Settings page shows what's configured (masked), the unit ledger, and a free 
 
 **Prototype security:** The anonymous browser cookie is not authentication. A public deployment is suitable for synthetic demo data, not sensitive personal trials, until authenticated accounts, authorization, rate limits and production security review are added. The local key setup dialog is disabled server-side on deployed instances; configure deployment secrets through Vercel instead.
 
+### Free Render judge preview
+
+The included `render.yaml` provisions a free Node web service and free Render Postgres database. It sets `RECEIPTS_PUBLIC_DEMO=1`, forces YouCam and agents to mock mode, disables personal-photo uploads, and offers a server-generated synthetic check-in instead. No private API keys or real photos are needed. `scripts/render-start.mjs` applies the schema and seeds the two demos only when the database is empty; it does not reset existing trials. Free web services sleep after 15 minutes of inactivity, and free Render Postgres databases expire after 30 days; see [Render's free-tier limits](https://render.com/docs/free). This is a shared demo, not a secure production service: do not enter private information. Monitor free-tier usage to avoid charges or suspension.
+
+### Vercel + Neon
+
 1. Create a Neon database through Vercel's Neon integration. It sets `DATABASE_URL` (pooled) and `DATABASE_URL_UNPOOLED`.
 2. Set the env vars above in Vercel. Generate `PHOTO_ENCRYPTION_KEY` with `node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"`.
 3. Vercel runs `npm run vercel-build`, which swaps the Prisma provider to Postgres (`scripts/use-postgres.mjs`), pushes the schema, and builds.

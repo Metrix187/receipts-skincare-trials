@@ -7,6 +7,7 @@ import { HttpError, requireOwnedTrial } from "@/lib/owner";
 import { MAX_FILE_BYTES, MIN_SHORT_SIDE } from "@/lib/youcam/costs";
 import type { Tier } from "@/lib/youcam/concerns";
 import { captureView } from "@/lib/capture-view";
+import { env } from "@/lib/env";
 
 export const maxDuration = 60;
 
@@ -23,6 +24,7 @@ const Face = z.object({
  */
 export async function POST(req: NextRequest, ctx: RouteContext<"/api/trials/[id]/captures">) {
   return handle(async () => {
+    if (env().RECEIPTS_PUBLIC_DEMO) throw new HttpError(403, "The public demo only accepts its built-in synthetic sample; personal photos are disabled.");
     const { id } = await ctx.params;
     const trial = await requireOwnedTrial(id);
     const form = await req.formData();

@@ -56,3 +56,4 @@ youcamkey.env*
 tests/e2e/fixtures/
 /prisma/e2e*.db*
 /inspect-out
+/deliverables/

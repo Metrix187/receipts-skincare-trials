@@ -9,6 +9,7 @@ import { findVisibleTrial } from "@/lib/owner";
 import type { Tier } from "@/lib/youcam/concerns";
 import { MIN_SHORT_SIDE, unitsPerAnalysis } from "@/lib/youcam/costs";
 import { CaptureClient } from "./CaptureClient";
+import { PublicDemoCapture } from "./PublicDemoCapture";
 
 export const metadata: Metadata = { title: "Today's photo" };
 
@@ -43,7 +44,7 @@ async function Capture({ params }: { params: Promise<{ id: string }> }) {
         <h1 className="text-2xl font-semibold tracking-tight">Today&apos;s photo</h1>
         <Link href={`/trials/${id}`} className="text-sm text-ink-2 underline underline-offset-2">Back</Link>
       </div>
-      <CaptureClient
+      {env().RECEIPTS_PUBLIC_DEMO ? <PublicDemoCapture trialId={id} /> : <CaptureClient
         trialId={id}
         design={t.design as "split_face" | "pre_post"}
         treatedSide={t.treatedSide}
@@ -54,7 +55,7 @@ async function Capture({ params }: { params: Promise<{ id: string }> }) {
         captureTime={t.captureTime ?? "08:00"}
         referenceLuma={referenceLuma}
         instruction={instruction}
-      />
+      />}
     </div>
   );
 }

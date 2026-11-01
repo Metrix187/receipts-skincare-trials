@@ -1,0 +1,39 @@
+# Free, synthetic-data-only hackathon preview. Render Postgres free databases
+# expire after 30 days; the free web service sleeps after 15 minutes idle.
+databases:
+  - name: receipts-demo-db
+    databaseName: receipts
+    user: receipts
+    plan: free
+    region: oregon
+
+services:
+  - type: web
+    name: receipts-demo
+    runtime: node
+    plan: free
+    region: oregon
+    buildCommand: npm ci && node scripts/use-postgres.mjs --in-place && npm run build
+    startCommand: node scripts/render-start.mjs
+    healthCheckPath: /
+    envVars:
+      - key: NODE_VERSION
+        value: 24.20.0
+      - key: NPM_CONFIG_PRODUCTION
+        value: "false"
+      - key: RECEIPTS_PUBLIC_DEMO
+        value: "1"
+      - key: MOCK_YOUCAM
+        value: "1"
+      - key: MOCK_AGENTS
+        value: "1"
+      - key: PHOTO_ENCRYPTION_KEY
+        generateValue: true
+      - key: DATABASE_URL
+        fromDatabase:
+          name: receipts-demo-db
+          property: connectionString
+      - key: DATABASE_URL_UNPOOLED
+        fromDatabase:
+          name: receipts-demo-db
+          property: connectionString
