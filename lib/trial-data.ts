@@ -76,6 +76,7 @@ export function primaryAnalysis(trial: Trial, captures: CaptureWithM[]): Analysi
     washInDays: trial.washInDays,
     claimDays: trial.claimDays,
     treatmentStartDay: trial.baselineDays ?? 0,
+    plannedTreatmentDays: trial.treatmentDays ?? undefined,
     days,
     seed: fnv1a(`${trial.id}:${trial.protocolHash ?? ""}`),
   });

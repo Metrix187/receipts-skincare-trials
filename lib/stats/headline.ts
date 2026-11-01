@@ -23,21 +23,24 @@ export function headlineFor(
     ctx.lowerIsBetterArea
       ? `${Math.abs(e).toFixed(1)} points ${e >= 0 ? "less" : "more"} of the cheek flagged than the other side`
       : `${fmt(e)} ${ctx.unit}`;
+  if (r.interim && r.effect !== null) return `Interim ${m} estimate after ${ctx.daysLogged} days: ${fmt(r.effect)} ${ctx.unit}. Final evaluation is at the planned endpoint.`;
   switch (r.label) {
     case "not_enough_data":
       return `Not enough data yet: ${r.nBaseline} baseline and ${r.nTreatment} treatment days logged (minimum ${r.minimums.baseline} + ${r.minimums.treatment}). ${r.daysRemaining.note}`;
     case "improved":
+      if (ctx.design === "split_face") return `${cap(m)} mask-intensity proxy shifted lower on the treated side: ${fmt(r.effect!)} ${ctx.unit}${ci} after ${ctx.daysLogged} days. This is not a validated skin outcome.`;
       return `${cap(m)} improved${where}: ${size(r.effect!)}${ci} after ${ctx.daysLogged} days.${
         r.effect! < r.sesoi ? ` That's smaller than the ${r.sesoi} ${ctx.unit} you said would matter.` : ""
       }`;
     case "worsened":
+      if (ctx.design === "split_face") return `${cap(m)} mask-intensity proxy shifted higher on the treated side: ${fmt(r.effect!)} ${ctx.unit}${ci} after ${ctx.daysLogged} days. This is not a validated skin outcome.`;
       return `${cap(m)} got worse${where}: ${size(r.effect!)}${ci} after ${ctx.daysLogged} days.`;
     case "no_meaningful_change":
-      return `No meaningful change in ${m} after ${ctx.daysLogged} days: any effect is smaller than ±${r.sesoi} ${ctx.unit}${ci}.`;
+      return `The estimated ${m} change after ${ctx.daysLogged} days is within ±${r.sesoi} ${ctx.unit}${ci}; measurement uncertainty still applies.`;
     case "inconclusive":
       return more === null
-        ? `No detectable change in ${m} after ${ctx.daysLogged} days, and the data are too noisy to settle it${ci}.`
-        : `No detectable change in ${m} after ${ctx.daysLogged} days; ${more} more needed to rule out a small effect${ci}.`;
+        ? `Inconclusive ${m} result after ${ctx.daysLogged} days${ci}. ${r.daysRemaining.note}`
+        : `No detectable change in ${m} after ${ctx.daysLogged} days; roughly ${more} more days may improve precision${ci}.`;
   }
 }
 

@@ -27,6 +27,7 @@ export function ProtocolCard({ trial, protocol: p }: { trial: Trial; protocol: P
         Protocol
       </CardTitle>
       <p className="text-[15px] leading-relaxed text-ink">{p.plain_summary}</p>
+      {split && <p className="mt-3 rounded-lg bg-warn-bg p-3 text-xs text-warn">Experimental measurement: small approximate cheek patches sample YouCam mask intensity. This proxy is not validated across skin tones, facial hair, lighting or products; it is not a medical measurement.</p>}
 
       <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-4">
         <Stat label="Design" value={split ? "Split-face" : "Before / after"} hint={split ? `Product on ${p.treated_side} side` : "Whole face"} />

@@ -78,7 +78,7 @@ async function TrialList() {
                   </div>
                   <div className="truncate text-sm text-ink-2">“{t.claimText}”</div>
                 </div>
-                {v ? <VerdictBadge label={v.label as VerdictLabel} /> : <span className="text-xs text-muted">{t.status === "draft" ? "draft" : "running"}</span>}
+                {v ? <VerdictBadge label={v.label as VerdictLabel} experimental={t.design === "split_face"} /> : <span className="text-xs text-muted">{t.status === "draft" ? "draft" : "running"}</span>}
               </div>
               <div className="mt-2 text-xs text-muted tabular">
                 {t.primaryConcern ? `${concern(t.primaryConcern as ConcernKey).label} · ` : ""}

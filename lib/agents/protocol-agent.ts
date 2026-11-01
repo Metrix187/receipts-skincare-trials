@@ -26,11 +26,11 @@ Your job: design ONE pre-registered trial protocol for the user's product and cl
 How to work:
 1. Call list_skin_metrics to see what YouCam can measure.
 2. Decide the design:
-   - split_face: product on one randomly assigned side of the face only, other side is the control. Same photo, same lighting, so shared day-to-day noise cancels. This is the strongest design. Only possible for topical products the user can apply to half the face, and only for concerns whose masks are comparable cheek-to-cheek (splitFaceOk). If you choose it, call assign_treated_side and use exactly the side it returns. Never pick the side yourself.
+   - split_face: product on one randomly assigned side of the face only, other side is the control. The same photo may reduce shared noise, but lighting and other biases need not cancel. This experimental proxy is not clinically validated. Only possible for topical products the user can apply to half the face, and only for concerns whose masks are comparable cheek-to-cheek (splitFaceOk). If you choose it, call assign_treated_side and use exactly the side it returns. Never pick the side yourself.
    - pre_post: a baseline period without the product, then a treatment period. Use it for oral products, devices, wash-off products the user can't confine to one side, eye-area concerns, or when the user said they can't do half-face.
 3. Pick the primary concern that most directly matches the claim. One primary concern only: that is the only one the verdict will test. Up to 3 secondary concerns are shown descriptively, never tested. Keep total concerns at 4 or fewer (the cheapest YouCam unit tier). Call estimate_trial_cost to confirm the unit budget.
-4. Metric: split_face must use mask_coverage (percentage of the cheek area YouCam flags for the concern, per side; lower is better). pre_post must use ui_score (YouCam's 1-100 score, higher is better).
-5. SESOI (smallest effect size of interest): the smallest change the user would actually care about, in the metric's units. Day-to-day noise in these AI scores is typically a few points, so a SESOI below ~1.5 (mask_coverage) or ~2 (ui_score) is rarely detectable in a few weeks. Say so in sesoi_rationale.
+4. Metric: split_face must use mask_coverage (mean detection-mask intensity in approximate cheek patches; lower is treated as better). This proxy is experimental and not clinically validated. pre_post must use ui_score (YouCam's 1-100 score, higher is better).
+5. SESOI (smallest effect size of interest): propose a threshold in the metric's units. It is a provisional assumption, not a clinically validated threshold or an established measure of day-to-day noise; explain that limitation.
 6. Durations: baseline >= 3 days for split_face, >= 5 for pre_post. treatment_days should cover the claim's stated timeframe (claim_days) when it is reasonable (cap 56). Use wash_in_days only if the claim implies a delayed effect, and explain it. Analyzable treatment days (treatment - wash-in) must be >= 7.
 7. If the claim cannot be measured from a selfie (e.g. "boosts collagen", "repairs the barrier", "SPF 50"), set claim_testable=false, pick the closest visible proxy, and say plainly in caveats that the trial only tests the visible proxy.
 8. Call check_protocol on your draft, fix every issue, then call submit_protocol.
@@ -68,7 +68,7 @@ function tools(input: ProtocolAgentInput, state: { side: "left" | "right" | null
         concerns: CONCERNS.filter((c) => c.scored).map(({ key, label, measures, splitFaceOk }) => ({ key, label, measures, splitFaceOk })),
         metrics: {
           ui_score: "YouCam's 1-100 whole-face score for the concern; higher is better. Used for pre_post.",
-          mask_coverage: "Percentage of each cheek region flagged in YouCam's detection mask for the concern; lower is better. Computed per side, so it enables split_face.",
+          mask_coverage: "Experimental mean mask intensity in approximate cheek patches; lower is treated as better. Not a validated measure of area or clinical improvement.",
         },
       }),
     },
@@ -244,22 +244,22 @@ async function mockProtocolAgent(input: ProtocolAgentInput, state: { side: "left
   const draft: Protocol = {
     design: split ? "split_face" : "pre_post",
     design_rationale: split
-      ? `You'll apply ${input.productName} to your ${state.side} side only and leave the other side as a built-in control. Both sides are in the same photo, so lighting and daily swings cancel out.`
+      ? `You'll apply ${input.productName} to your ${state.side} side only and leave the other side as a built-in control. A shared photo can reduce some lighting and daily variation, but cannot eliminate bias.`
       : `${input.productName} affects your whole face, so there's no untreated side to compare against. We record ${baseline} baseline days without it, then compare the treatment period to that baseline.`,
     treated_side: split ? state.side : null,
     primary_concern: primary,
     primary_metric: metric,
     secondary_concerns: secondary,
     metric_rationale: split
-      ? `The claim is about ${concern(primary).label.toLowerCase()}. YouCam's ${concern(primary).label.toLowerCase()} mask shows where it detects it, so we measure the % of each cheek it flags and compare the two sides.`
+      ? `The claim is about ${concern(primary).label.toLowerCase()}. We compare average YouCam mask intensity in approximate cheek patches. This is an experimental proxy, not a validated area measurement.`
       : `The claim is about ${concern(primary).label.toLowerCase()}, so we track YouCam's ${concern(primary).label.toLowerCase()} score (1-100, higher is better).`,
     baseline_days: baseline,
     treatment_days: treatment,
     wash_in_days: claimDays && claimDays >= 28 ? 7 : 0,
     sesoi: split ? 2 : 3,
     sesoi_rationale: split
-      ? "A 2-point drop in the share of cheek flagged is about the smallest difference you'd notice in the mirror. Smaller changes are within day-to-day noise."
-      : "3 points on YouCam's 1-100 scale is roughly the day-to-day wobble, so anything smaller isn't worth paying for.",
+      ? "A 2-point change is a provisional threshold in mask intensity, not a clinically validated or guaranteed visible difference."
+      : "Three points is a provisional threshold on YouCam's 1–100 scale; its practical importance is not validated.",
     capture_time: "08:00",
     capture_instructions: [
       "Same time every morning, before applying anything.",
@@ -275,7 +275,7 @@ async function mockProtocolAgent(input: ProtocolAgentInput, state: { side: "left
       ...(testable ? [] : ["The claim describes something a selfie can't see; this trial only tests the closest visible proxy."]),
       "Not medical advice.",
     ],
-    plain_summary: `${baseline} baseline days, then ${treatment} days of treatment. Primary question: does ${concern(primary).label.toLowerCase()} change by at least ${split ? "2 points of cheek area" : "3 score points"}? Until the numbers can honestly support an answer, the verdict will say "not enough data".`,
+    plain_summary: `${baseline} baseline days, then ${treatment} days of treatment. Primary question: does ${concern(primary).label.toLowerCase()} change by at least ${split ? "2 mask-intensity points" : "3 score points"}? Until the numbers can honestly support an answer, the verdict will say "not enough data".`,
   };
 
   const check = (await call("check_protocol", draft)) as { issues: string[] };

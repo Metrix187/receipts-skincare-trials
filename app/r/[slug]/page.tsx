@@ -30,7 +30,7 @@ async function Receipt({ params }: { params: Promise<{ slug: string }> }) {
   const { trial, protocol, analysis: r, meta } = b;
   if (!protocol || !r || !meta || !trial.lockedAt) notFound();
   const v = b.verdict;
-  const fresh = v && v.nBaseline === r.nBaseline && v.nTreatment === r.nTreatment;
+  const fresh = v && v.headline === b.headline && v.label === r.label && v.nBaseline === r.nBaseline && v.nTreatment === r.nTreatment;
   const planned = (trial.baselineDays ?? 0) + (trial.treatmentDays ?? 0);
   const mock = b.captures.some((c) => c.mock);
   const first = b.captures[0]?.capturedAt;
@@ -45,7 +45,7 @@ async function Receipt({ params }: { params: Promise<{ slug: string }> }) {
             <h1 className="mt-1 text-xl font-semibold tracking-tight">{trial.productName}</h1>
             {trial.brand && <div className="text-sm text-ink-2">{trial.brand}</div>}
           </div>
-          <VerdictBadge label={r.label as VerdictLabel} size="lg" />
+          <VerdictBadge label={r.label as VerdictLabel} size="lg" interim={r.interim} experimental={trial.design === "split_face"} />
         </header>
 
         <section className="grid gap-1 border-b border-dashed border-line py-4 text-sm">
@@ -63,6 +63,7 @@ async function Receipt({ params }: { params: Promise<{ slug: string }> }) {
             <div><div className="text-xs text-muted">95% interval</div><div className="font-medium">{r.ciLow == null ? "–" : `${fmt(r.ciLow)} to ${fmt(r.ciHigh)}`}</div></div>
             <div><div className="text-xs text-muted">Days</div><div className="font-medium">{b.daysLogged} of {planned}</div></div>
           </div>
+          <p className="mt-3 text-xs text-muted">Approximate, model-based interval; repeated looks are exploratory. {trial.design === "split_face" && "Cheek-patch mask intensity is an unvalidated proxy."}</p>
         </section>
 
         <section className="py-4">

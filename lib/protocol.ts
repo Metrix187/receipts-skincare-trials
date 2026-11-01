@@ -76,5 +76,5 @@ export function protocolConcerns(p: Pick<Protocol, "primary_concern" | "secondar
 /** Effects are always oriented so + = better; `better` says what + means in words. */
 export const METRIC_META = {
   ui_score: { label: "YouCam score", unit: "pts", higherIsBetter: true, short: "score", better: "higher score", less: false },
-  mask_coverage: { label: "Cheek area flagged (%)", unit: "pts", higherIsBetter: false, short: "% flagged", better: "less of the cheek flagged", less: true },
+  mask_coverage: { label: "Cheek patch mask intensity (0–100)", unit: "pts", higherIsBetter: false, short: "mask intensity", better: "lower mask intensity", less: false },
 } as const;

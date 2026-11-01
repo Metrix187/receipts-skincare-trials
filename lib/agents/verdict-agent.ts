@@ -20,10 +20,12 @@ const SYSTEM = `You are the Verdict Agent in Receipts. A user is running a pre-r
 Hard rules:
 - The statistics are already decided. Call run_preregistered_analysis: it runs the locked analysis (the one primary metric, the locked SESOI, the locked wash-in). You cannot change the analysis, pick a different metric, drop days, or test secondary concerns. Secondary concerns are descriptive only, never evidence.
 - Your label MUST equal the computed label. Your numbers must match the tool output (round to 1 decimal).
+- If interim is true, your headline MUST say "interim" and must not imply a final verdict. A forecast of additional days is only an estimate; never promise it will rule out an effect.
+- Split-face mask intensity in geometric cheek patches is an experimental proxy, not a validated measure of cheek area or clinical improvement. Always mention this limitation.
 - If the label is not_enough_data, say so plainly and say how many more days are needed. If it is inconclusive, say "no detectable change", not "it doesn't work", and say how many more days would settle it (or that more days can't, if the tool says the target is unreachable).
-- Never overclaim. Banned: "proven", "clinically", "guaranteed", "definitely", "cure", "miracle". A CI excluding zero means "likely improved", not "it works". An improvement smaller than the SESOI is real but smaller than what the user said would matter: say that.
+- Never overclaim. Banned: "proven", "clinically", "guaranteed", "definitely", "cure", "miracle". A CI excluding zero is not proof of a product effect. State whether an estimate is smaller than the SESOI without claiming that it is real.
 - Check data quality (check_data_quality) and mention anything that could bias the result, e.g. lighting drifting between phases, missed days, or mock data.
-- headline: one blunt sentence (<= 200 chars) with the key number(s) and the number of days, in the style "No detectable change in redness after 18 days; 12 more needed to rule out a small effect."
+- headline: one blunt sentence (<= 200 chars) with the key number(s) and days. Never promise that a number of extra days will rule out an effect.
 - explanation: 2-4 short sentences in plain language: what was compared, the estimate and its 95% interval, and what that does and doesn't mean.
 
 Work: get_protocol, check_data_quality, run_preregistered_analysis, optionally get_daily_series / describe_secondary, then call submit_verdict.`;
@@ -50,6 +52,8 @@ export function checkVerdictText(v: { label: string; headline: string; explanati
 function qualityReport(b: TrialBundle) {
   const issues: string[] = [];
   const counted = b.captures;
+  if (b.trial.design === "split_face") issues.push("Cheek-patch mask intensity is an experimental proxy, not a validated skin measurement.");
+  issues.push("Model-based intervals are approximate; repeated daily looks are exploratory.");
   const lastDay = counted.length ? Math.max(...counted.map((c) => c.dayIndex)) : -1;
   const missed = lastDay >= 0 ? lastDay + 1 - counted.length : 0;
   if (missed > 0) issues.push(`${missed} missed day(s) between day 0 and day ${lastDay}.`);
@@ -158,6 +162,8 @@ function tools(b: TrialBundle): AgentTool[] {
           .safeParse(raw);
         if (!v.success) throw new ToolInputError(v.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`).join("; "));
         const issues = checkVerdictText(v.data, r.label);
+        if (r.interim && r.effect !== null && !/\binterim\b/i.test(v.data.headline)) issues.push("The headline must call this an interim estimate.");
+        if (/\b(will|needed to) (rule out|prove|settle)\b/i.test(`${v.data.headline} ${v.data.explanation}`)) issues.push("Additional days cannot be guaranteed to settle the question.");
         if (issues.length) throw new ToolInputError(`Verdict rejected: ${issues.join(" ")}`);
         return v.data satisfies VerdictOutput;
       },
@@ -172,7 +178,7 @@ export function deterministicVerdict(b: TrialBundle): VerdictOutput {
   const q = qualityReport(b);
   const compared =
     b.trial.design === "split_face"
-      ? `We compared the share of each cheek YouCam flags for ${c} on your treated (${b.trial.treatedSide}) side against your untreated side, before and after you started.`
+      ? `We compared average YouCam ${c} mask intensity in approximate cheek patches on your treated (${b.trial.treatedSide}) side and untreated side, before and after you started.`
       : `We compared your YouCam ${c} score during treatment with your ${r.nBaseline}-day baseline.`;
   const est =
     r.effect === null
@@ -180,10 +186,10 @@ export function deterministicVerdict(b: TrialBundle): VerdictOutput {
       : `The estimated change is ${fmt(r.effect)} ${meta.unit} (+ = ${meta.better}), with a 95% interval from ${fmt(r.ciLow!)} to ${fmt(r.ciHigh!)}.`;
   const meaning: Record<VerdictLabel, string> = {
     not_enough_data: "Any number shown now would mostly be noise.",
-    improved: r.effect! >= r.sesoi ? "The whole interval is above zero, so this is likely a real improvement for you." : `The interval is above zero, but the estimate is smaller than the ${r.sesoi} ${meta.unit} you said would matter.`,
+    improved: r.effect! >= r.sesoi ? "The model-based interval is above zero; measurement error and other changes could still explain the result." : `The interval is above zero, but the estimate is smaller than the ${r.sesoi} ${meta.unit} threshold.`,
     worsened: "The whole interval is below zero: the treated measurements got worse.",
     no_meaningful_change: `The interval sits inside ±${r.sesoi} ${meta.unit}, so any effect is smaller than what you said would matter.`,
-    inconclusive: "The interval still includes both no effect and an effect big enough to matter, so it can't tell them apart yet.",
+    inconclusive: r.interim ? "This is an exploratory look before the planned endpoint; do not treat it as a final result." : "The interval does not give a conclusive answer at the chosen threshold.",
   };
   return {
     label: r.label,

@@ -49,6 +49,8 @@ export interface AnalysisInput {
   claimDays?: number | null;
   /** First treatment day index (to measure elapsed treatment time). */
   treatmentStartDay: number;
+  /** Locked duration; data after the pre-registered endpoint are excluded. */
+  plannedTreatmentDays?: number;
   days: DayPoint[];
   seed: number;
   resamples?: number;
@@ -89,6 +91,7 @@ export interface AnalysisResult {
   };
   trajectory: TrajectoryPoint[];
   minimums: { baseline: number; treatment: number };
+  interim: boolean;
 }
 
 /** z.975 / (z.975 + z.80): planning half-width as a fraction of the SESOI. */
@@ -116,18 +119,21 @@ export function analyzeTrial(input: AnalysisInput): AnalysisResult {
     .filter((d): d is typeof d & { v: number } => d.v !== undefined);
 
   const baseline = series.filter((d) => d.phase === "baseline");
-  const treatAll = series.filter((d) => d.phase === "treatment");
+  const allTreatment = series.filter((d) => d.phase === "treatment");
+  const treatAll = allTreatment.filter((d) => input.plannedTreatmentDays == null || d.day < input.treatmentStartDay + input.plannedTreatmentDays);
   const treatment = treatAll.filter((d) => d.day - input.treatmentStartDay >= washIn);
   const B = baseline.map((d) => d.v);
   const T = treatment.map((d) => d.v);
   // Wash-in days are excluded from the effect but still inform the noise model.
   const W = treatAll.filter((d) => d.day - input.treatmentStartDay < washIn).map((d) => d.v);
 
-  const elapsedTreatment = treatAll.length
-    ? Math.max(...treatAll.map((d) => d.day)) - input.treatmentStartDay + 1
+  const elapsedTreatment = allTreatment.length
+    ? Math.max(...allTreatment.map((d) => d.day)) - input.treatmentStartDay + 1
     : 0;
   const timeframe =
     input.claimDays != null ? Math.max(0, input.claimDays - elapsedTreatment) : null;
+  const plannedRemaining = input.plannedTreatmentDays == null ? 0 : Math.max(0, input.plannedTreatmentDays - elapsedTreatment);
+  const interim = plannedRemaining > 0;
 
   const pairingNoiseReduction =
     input.design === "split_face" ? pairingReduction(input.days, sign) : null;
@@ -142,6 +148,7 @@ export function analyzeTrial(input: AnalysisInput): AnalysisResult {
     dailySd: T.length + B.length > 2 ? Math.sqrt(pooledVariance(T, B)) : null,
     pairingNoiseReduction,
     minimums: { baseline: minB, treatment: minT },
+    interim,
   };
 
   if (B.length < minB || T.length < minT) {
@@ -149,6 +156,8 @@ export function analyzeTrial(input: AnalysisInput): AnalysisResult {
     const needT = Math.max(0, minT - T.length);
     const needB = Math.max(0, minB - B.length);
     const precisionGuess = needT + (needB > 0 && treatAll.length === 0 ? needB : 0);
+    const windowClosed = input.plannedTreatmentDays != null && !interim;
+    const baselineClosed = needB > 0 && allTreatment.length > 0;
     return {
       ...base,
       label: "not_enough_data",
@@ -159,9 +168,12 @@ export function analyzeTrial(input: AnalysisInput): AnalysisResult {
       daysRemaining: {
         precision: null,
         timeframe,
-        overall: Math.max(precisionGuess, timeframe ?? 0),
-        note:
-          needB > 0
+        overall: windowClosed || baselineClosed ? null : Math.max(precisionGuess, timeframe ?? 0, plannedRemaining),
+        note: windowClosed
+          ? "The pre-registered window closed without enough data; a new trial is needed."
+          : baselineClosed
+            ? "The baseline ended without enough data; a new trial is needed."
+            : needB > 0
             ? `Need ${needB} more baseline day(s) before treatment can be evaluated.`
             : `Need ${needT} more treatment day(s) before any interval is meaningful.`,
       },
@@ -171,7 +183,9 @@ export function analyzeTrial(input: AnalysisInput): AnalysisResult {
 
   const rnd = prng(input.seed);
   const boot = bootstrapDiff(T, B, { resamples, rnd, noiseOnly: [W] });
-  const label = decide(boot.ciLow, boot.ciHigh, input.sesoi);
+  // Repeated daily looks are not a sequential test. Only classify at the locked
+  // endpoint; earlier estimates remain exploratory rather than a final verdict.
+  const label = interim ? "inconclusive" : decide(boot.ciLow, boot.ciHigh, input.sesoi);
 
   // ---- Days remaining: precision-based planning ---------------------------------
   // Var(effect) ~ VarT_now * nT_now / nT + VarB  (only treatment days accumulate from
@@ -207,7 +221,12 @@ export function analyzeTrial(input: AnalysisInput): AnalysisResult {
       note = `Interval half-width is ±${halfWidth.toFixed(1)}; reaching ±${target.toFixed(1)} (80% power to detect ${input.sesoi}) needs about ${precision} more treatment day(s).`;
     }
   }
-  const overall = precision === null ? null : Math.max(precision, timeframe ?? 0);
+  if (interim) note = `Interim estimate only; ${plannedRemaining} day(s) remain until the pre-registered endpoint. Repeated looks are not a sequential test.`;
+  else if (input.plannedTreatmentDays != null && label === "inconclusive") {
+    precision = null;
+    note = "The pre-registered window is complete. Further measurements need a new analysis plan; they cannot guarantee a conclusive result.";
+  }
+  const overall = interim ? Math.max(plannedRemaining, timeframe ?? 0) : precision === null ? null : Math.max(precision, timeframe ?? 0);
 
   return {
     ...base,

@@ -224,6 +224,31 @@ describe("headline", () => {
     expect(r.label).toBe("inconclusive");
     expect(r.daysRemaining.overall).not.toBeNull();
     const h = headlineFor(r, { metricLabel: "Redness", unit: "pts", design: "pre_post", daysLogged: 18 });
-    expect(h).toMatch(/^No detectable change in redness after 18 days; \d+ more needed to rule out a small effect/);
+    expect(h).toMatch(/^No detectable change in redness after 18 days; roughly \d+ more days may improve precision/);
+  });
+});
+
+describe("pre-registered endpoint", () => {
+  it("keeps early looks interim and excludes measurements after the planned endpoint", () => {
+    const initial = prePost({ nB: 7, nT: 10, effect: 8, sd: 1, seed: 12 });
+    const input = { design: "pre_post" as const, higherIsBetter: true, sesoi: 3, treatmentStartDay: 7, plannedTreatmentDays: 14, seed: 1 };
+    const early = analyzeTrial({ ...input, days: initial });
+    expect(early.interim).toBe(true);
+    expect(early.label).toBe("inconclusive");
+    expect(headlineFor(early, { metricLabel: "Redness", unit: "pts", design: "pre_post", daysLogged: 17 })).toMatch(/^Interim/);
+    const complete = prePost({ nB: 7, nT: 14, effect: 8, sd: 1, seed: 12 });
+    const atEnd = analyzeTrial({ ...input, days: complete });
+    const withLate = analyzeTrial({ ...input, days: [...complete, { day: 21, phase: "treatment", value: -500 }] });
+    expect(atEnd.interim).toBe(false);
+    expect(withLate.effect).toBe(atEnd.effect);
+    expect(withLate.nTreatment).toBe(14);
+    const missedLast = complete.filter((d) => d.day !== 20);
+    const afterMissing = analyzeTrial({ ...input, days: [...missedLast, { day: 21, phase: "treatment", value: -500 }] });
+    expect(afterMissing.interim).toBe(false);
+    expect(afterMissing.nTreatment).toBe(13);
+    const tooSparse = analyzeTrial({ ...input, days: [complete[0], complete[1], complete[2], complete[3], complete[4], complete[5], complete[6], complete.at(-1)!] });
+    expect(tooSparse.label).toBe("not_enough_data");
+    expect(tooSparse.daysRemaining.overall).toBeNull();
+    expect(tooSparse.daysRemaining.note).toMatch(/window closed/);
   });
 });

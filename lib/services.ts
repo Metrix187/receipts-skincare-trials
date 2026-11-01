@@ -126,7 +126,9 @@ export async function produceVerdict(trialId: string) {
       nBaseline: r.nBaseline,
       nTreatment: r.nTreatment,
       daysRemaining: r.daysRemaining.overall,
-      headline: output.headline,
+      // Display the deterministic numeric headline. Agent phrasing is retained
+      // in its logged output; simple text checks cannot verify every number it emits.
+      headline: bundle.headline!,
       explanation: output.explanation,
       stats: { ...stats, trajectory, caveats: output.caveats, nextStep: output.next_step } as object,
     },

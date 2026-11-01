@@ -11,13 +11,13 @@ export function VerdictPanel({ bundle: b, canEdit }: { bundle: TrialBundle; canE
   if (!r || !b.meta) return null;
   const v = b.verdict;
   // A stored verdict is current only if it saw exactly the days we have now.
-  const fresh = v && v.nBaseline === r.nBaseline && v.nTreatment === r.nTreatment;
+  const fresh = v && v.headline === b.headline && v.label === r.label && v.nBaseline === r.nBaseline && v.nTreatment === r.nTreatment;
   const stats = (v?.stats ?? {}) as { caveats?: string[]; nextStep?: string };
   const label = r.label as VerdictLabel;
 
   return (
     <Card data-testid="verdict-panel">
-      <CardTitle aside={<VerdictBadge label={label} />}>Verdict</CardTitle>
+      <CardTitle aside={<VerdictBadge label={label} interim={r.interim} experimental={b.trial.design === "split_face"} />}>Verdict</CardTitle>
       <p className="text-lg font-medium leading-snug text-ink text-pretty" data-testid="verdict-headline">
         {fresh ? v!.headline : b.headline}
       </p>
@@ -34,6 +34,7 @@ export function VerdictPanel({ bundle: b, canEdit }: { bundle: TrialBundle; canE
         />
       </div>
       <p className="mt-3 text-xs text-muted">{r.daysRemaining.note}</p>
+      <p className="mt-2 text-xs text-muted">Intervals are model-based and approximate, especially with few or missing days. Repeated checks are exploratory. {b.trial.design === "split_face" && "Cheek patches and mask intensity are experimental proxies, not validated measurements of skin improvement."}</p>
 
       {fresh && (stats.caveats?.length || stats.nextStep) && (
         <div className="mt-4 space-y-2 text-sm">
@@ -54,8 +55,7 @@ export function VerdictPanel({ bundle: b, canEdit }: { bundle: TrialBundle; canE
         </div>
       )}
       <p className="mt-3 text-[11px] text-muted">
-        The label and numbers come from the locked analysis ({r.method?.name ?? "not run yet"}). The agent writes the words and is
-        rejected if it disagrees with the math or overclaims.
+        The label and headline come from the locked analysis ({r.method?.name ?? "not run yet"}). The agent explains the result; automated checks reject label mismatches and some overclaims, but cannot verify every sentence.
       </p>
     </Card>
   );
