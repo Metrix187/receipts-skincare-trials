@@ -12,7 +12,12 @@ export const metadata: Metadata = { title: "Settings" };
 export default function SettingsPage() {
   return (
     <div className="space-y-5">
-      <div className="flex flex-wrap items-center justify-between gap-3"><h1 className="text-2xl font-semibold tracking-tight">Settings</h1><ClaudeKeyDialog /></div>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h1 className="text-2xl font-semibold tracking-tight">Settings</h1>
+        {/* Local setup only. The server refuses it outside localhost dev anyway; on the
+            public demo, don't invite visitors to paste a real key at all. */}
+        {process.env.RECEIPTS_PUBLIC_DEMO !== "1" && <ClaudeKeyDialog />}
+      </div>
       <Suspense fallback={<Skeleton className="h-64" />}>
         <Status />
       </Suspense>
