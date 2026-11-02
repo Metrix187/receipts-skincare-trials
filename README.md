@@ -130,6 +130,8 @@ The Settings page shows what's configured (masked), the unit ledger, and a free 
 
 ### Free Render judge preview
 
+**Live:** https://receipts-skincare-trials.onrender.com (synthetic data and mock agents only). The free instance sleeps when idle, so the first visit can take about a minute while Render wakes it.
+
 The included `render.yaml` provisions a free Node web service and free Render Postgres database. It sets `RECEIPTS_PUBLIC_DEMO=1`, forces YouCam and agents to mock mode, disables personal-photo uploads, and offers a server-generated synthetic check-in instead. No private API keys or real photos are needed. `scripts/render-start.mjs` applies the schema and seeds the two demos only when the database is empty; it does not reset existing trials. Free web services sleep after 15 minutes of inactivity, and free Render Postgres databases expire after 30 days; see [Render's free-tier limits](https://render.com/docs/free). This is a shared demo, not a secure production service: do not enter private information. Monitor free-tier usage to avoid charges or suspension.
 
 ### Vercel + Neon

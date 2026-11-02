@@ -4,6 +4,9 @@ import { spawn, spawnSync } from "node:child_process";
 import { PrismaClient } from "@prisma/client";
 
 if (process.env.RECEIPTS_PUBLIC_DEMO !== "1") throw new Error("This bootstrap is only for RECEIPTS_PUBLIC_DEMO=1.");
+// The Postgres schema reads directUrl from DATABASE_URL_UNPOOLED. Render gives one
+// connection string, so reuse it rather than relying on the start command to export it.
+process.env.DATABASE_URL_UNPOOLED ||= process.env.DATABASE_URL;
 const npx = process.platform === "win32" ? "npx.cmd" : "npx";
 function run(args) {
   const result = spawnSync(npx, args, { stdio: "inherit", env: process.env, shell: process.platform === "win32" });

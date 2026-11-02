@@ -18,6 +18,10 @@ The demo includes two clearly labeled synthetic 21-day histories, so judges can 
 
 ## Judge testing instructions
 
+**Fastest:** open the live demo at https://receipts-skincare-trials.onrender.com. It runs on Render's free tier, so the first request after idle can take about a minute to wake up. It uses synthetic data, mock YouCam and mock agents only; personal photo uploads are disabled. Click **See a finished 21-day trial**, open the collagen trial from the home page, or **Start a trial** and use the synthetic check-in.
+
+To run it locally instead:
+
 1. Follow the setup instructions in [README.md](README.md): Node 22+, `npm install`, `npm run setup`, then `npm run seed:demo` and `npm run dev`.
 2. Leave `MOCK_YOUCAM=1` for a zero-unit test. Without an Anthropic key, deterministic mock agents use the same tool interfaces and show their logs.
 3. Open `/demo` for the synthetic split-face trial; open the collagen trial on the home page for a before/after example. Expand the agent logs and use the receipt's PNG export.
@@ -28,7 +32,7 @@ The demo includes two clearly labeled synthetic 21-day histories, so judges can 
 
 - [ ] Register and complete the Devpost entry form; choose the Skin AI topic.
 - [ ] Publish a source repository with the MIT license, or share a private repository with the address specified in the official rules. Verify no `.env`, API keys, personal photos, or signed URLs are included.
-- [ ] Provide a working project URL, functioning demo, or test build and clear judge instructions; keep it available through the judging period. A production deployment has **not** been created by this project kit.
+- [ ] Provide a working project URL, functioning demo, or test build and clear judge instructions; keep it available through the judging period. Live preview: https://receipts-skincare-trials.onrender.com (free Render web service + free Render Postgres; the database expires 30 days after creation, around December 1, 2026).
 - [ ] Record the 1–3 minute walkthrough using [DEMO_SCRIPT.md](DEMO_SCRIPT.md); upload publicly to YouTube or Vimeo and paste the link into Devpost. Explain the YouCam API and show the working application on the intended device.
 - [ ] Paste the description and testing instructions above, update them to match the actual demo, and verify all claims and links. Do not describe synthetic data as a real clinical outcome.
 - [ ] Review permissions and rights for any visible faces, names, music, and third-party marks before publishing. Submit the entry yourself before the deadline.
