@@ -5,6 +5,7 @@ import { captureView } from "@/lib/capture-view";
 import { env } from "@/lib/env";
 import { handle } from "@/lib/http";
 import { HttpError, requireOwnedTrial } from "@/lib/owner";
+import { CalendarDate } from "@/lib/services";
 
 // Public preview only. No personal image is accepted: the server generates a
 // featureless synthetic image and uses the mock YouCam client and mock agents.
@@ -12,7 +13,7 @@ export async function POST(request: Request, ctx: RouteContext<"/api/trials/[id]
   return handle(async () => {
     if (!env().RECEIPTS_PUBLIC_DEMO) throw new HttpError(404, "Not found");
     const trial = await requireOwnedTrial((await ctx.params).id);
-    const body = z.object({ localDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/) }).parse(await request.json());
+    const body = z.object({ localDate: CalendarDate }).parse(await request.json());
     const bytes = new Uint8Array(await sharp({ create: { width: 600, height: 750, channels: 3, background: "#c8a08c" } }).jpeg().toBuffer());
     const capture = await submitCapture(trial, {
       bytes, mime: "image/jpeg", width: 600, height: 750, localDate: body.localDate,

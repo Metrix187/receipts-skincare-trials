@@ -13,14 +13,21 @@ import { deterministicVerdict, runVerdictAgent, type VerdictOutput } from "@/lib
 import { HttpError, requireOwnedTrial } from "@/lib/owner";
 import type { Tier } from "@/lib/youcam/concerns";
 
+/** A real calendar date in YYYY-MM-DD form ("2026-13-45" matches the regex but is not a date). */
+export const CalendarDate = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}$/)
+  .refine((v) => new Date(`${v}T00:00:00Z`).toISOString().slice(0, 10) === v, "Not a calendar date");
+
 export const NewTrialSchema = z.object({
   productName: z.string().trim().min(2).max(80),
-  brand: z.string().trim().max(60).optional().transform((v) => v || null),
+  // nullish: the stored agent input (re-parsed by the protocol route) carries the nulls this transform produced
+  brand: z.string().trim().max(60).nullish().transform((v) => v || null),
   claimText: z.string().trim().min(5).max(240),
   application: z.enum(PRODUCT_APPLICATION),
   canApplyToHalfFace: z.enum(["yes", "no", "unsure"]),
-  startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-  notes: z.string().trim().max(400).optional().transform((v) => v || null),
+  startDate: CalendarDate,
+  notes: z.string().trim().max(400).nullish().transform((v) => v || null),
 });
 
 export type NewTrial = z.infer<typeof NewTrialSchema>;
@@ -61,8 +68,10 @@ export async function designProtocol(trialId: string, input: NewTrial) {
 }
 
 async function applyProtocol(trialId: string, p: Protocol) {
-  await db.trial.update({
-    where: { id: trialId },
+  // Guarded: a redesign that was in flight when the user locked the protocol must not
+  // replace the protocol the hash on the receipt was computed from.
+  const { count } = await db.trial.updateMany({
+    where: { id: trialId, lockedAt: null },
     data: {
       protocol: p,
       design: p.design,
@@ -78,6 +87,7 @@ async function applyProtocol(trialId: string, p: Protocol) {
       claimDays: p.claim_days,
     },
   });
+  if (count === 0) throw new HttpError(409, "Protocol was locked while the redesign ran; the locked protocol stands.");
 }
 
 /** Pre-registration: freeze the protocol and record its hash. */

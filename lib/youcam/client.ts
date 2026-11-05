@@ -336,7 +336,18 @@ export class YouCamClient {
 
   /** Step 4. Settles the ledger row on a terminal status. */
   async resolveSkinAnalysis(task: SubmittedTask, opts: { timeoutMs?: number } = {}): Promise<SkinAnalysisResult> {
-    const data = await this.pollTask(task.taskId, opts);
+    let data: Awaited<ReturnType<typeof this.pollTask>>;
+    try {
+      data = await this.pollTask(task.taskId, opts);
+    } catch (err) {
+      // A timeout means "still running": the caller polls again and the reservation stands.
+      // Anything else (status endpoint 5xx, network drop) ends the capture, and the task may
+      // well have been charged, so count it as charged rather than leave the row reserved forever.
+      if (task.ledgerId && !(err instanceof YouCamError && err.kind === "timeout")) {
+        await this.opts.ledger?.settle(task.ledgerId, { status: "charged", note: `result not collected; charge unknown, counted: ${String(err).slice(0, 200)}` });
+      }
+      throw err;
+    }
     if (data.task_status === "error") {
       if (task.ledgerId) {
         await this.opts.ledger?.settle(task.ledgerId, { status: "not_charged", note: data.error ?? "error" });

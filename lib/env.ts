@@ -45,11 +45,12 @@ export function envStatus() {
     database: e.DATABASE_URL.startsWith("file:") ? "SQLite (local)" : "Postgres",
     youcamKey: mask(e.YOUCAM_API_KEY),
     youcamMode: e.youcamMock ? "mock" : "live",
-    youcamMockReason: e.MOCK_YOUCAM ? "MOCK_YOUCAM=1" : !e.YOUCAM_API_KEY ? "no YOUCAM_API_KEY" : null,
+    youcamMockReason: e.RECEIPTS_PUBLIC_DEMO ? "public demo" : e.MOCK_YOUCAM ? "MOCK_YOUCAM=1" : !e.YOUCAM_API_KEY ? "no YOUCAM_API_KEY" : null,
     tier: e.YOUCAM_TIER,
     unitBudget: e.YOUCAM_UNIT_BUDGET,
     anthropicKey: mask(e.ANTHROPIC_API_KEY),
     agentMode: e.agentsMock ? "mock" : "live",
+    agentsMockReason: e.RECEIPTS_PUBLIC_DEMO ? "public demo" : e.MOCK_AGENTS ? "MOCK_AGENTS=1" : !e.ANTHROPIC_API_KEY ? "no ANTHROPIC_API_KEY" : null,
     model: e.ANTHROPIC_MODEL,
     photoEncryption: e.PHOTO_ENCRYPTION_KEY ? "AES-256-GCM key set" : "MISSING: run npm run setup",
   };

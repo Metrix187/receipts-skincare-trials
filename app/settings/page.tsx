@@ -4,7 +4,7 @@ import { Suspense } from "react";
 import { ClaudeKeyDialog } from "@/components/ClaudeKeyDialog";
 import { UnitBalance } from "@/components/UnitBalance";
 import { Card, CardTitle, Skeleton } from "@/components/ui";
-import { envStatus } from "@/lib/env";
+import { env, envStatus } from "@/lib/env";
 import { ledgerSummary } from "@/lib/youcam/ledger-prisma";
 
 export const metadata: Metadata = { title: "Settings" };
@@ -16,7 +16,7 @@ export default function SettingsPage() {
         <h1 className="text-2xl font-semibold tracking-tight">Settings</h1>
         {/* Local setup only. The server refuses it outside localhost dev anyway; on the
             public demo, don't invite visitors to paste a real key at all. */}
-        {process.env.RECEIPTS_PUBLIC_DEMO !== "1" && <ClaudeKeyDialog />}
+        {!env().RECEIPTS_PUBLIC_DEMO && <ClaudeKeyDialog />}
       </div>
       <Suspense fallback={<Skeleton className="h-64" />}>
         <Status />
@@ -52,7 +52,7 @@ async function Status() {
     ["YouCam API key", s.youcamKey],
     ["Analysis tier", `${s.tier.toUpperCase()}: ${s.tier === "sd" ? "9" : "12"} units per daily analysis (1-4 concerns)`],
     ["Unit budget guard", `${s.unitBudget} units`],
-    ["Agents", s.agentMode === "mock" ? "Mock (no ANTHROPIC_API_KEY)" : `Live · ${s.model}`, s.agentMode === "live"],
+    ["Agents", s.agentMode === "mock" ? `Mock (${s.agentsMockReason})` : `Live · ${s.model}`, s.agentMode === "live"],
     ["Anthropic API key", s.anthropicKey],
     ["Photo encryption", s.photoEncryption],
     ["Database", s.database],

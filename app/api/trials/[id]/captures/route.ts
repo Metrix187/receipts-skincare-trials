@@ -4,6 +4,7 @@ import { z } from "zod";
 import { resolveCapture, submitCapture } from "@/lib/analysis/pipeline";
 import { handle } from "@/lib/http";
 import { HttpError, requireOwnedTrial } from "@/lib/owner";
+import { CalendarDate } from "@/lib/services";
 import { MAX_FILE_BYTES, MIN_SHORT_SIDE } from "@/lib/youcam/costs";
 import type { Tier } from "@/lib/youcam/concerns";
 import { captureView } from "@/lib/capture-view";
@@ -22,6 +23,15 @@ const Face = z.object({
  * Receives one pre-checked selfie (multipart: image, face, quality, localDate),
  * stores it encrypted, submits it to YouCam, and waits briefly for the result.
  */
+/** Form fields carrying JSON: a malformed one is the client's mistake (400), not a crash (500). */
+function parseJsonField(raw: FormDataEntryValue | null, name: string, fallback: string): unknown {
+  try {
+    return JSON.parse(String(raw ?? fallback));
+  } catch {
+    throw new HttpError(400, `Field "${name}" is not valid JSON.`);
+  }
+}
+
 export async function POST(req: NextRequest, ctx: RouteContext<"/api/trials/[id]/captures">) {
   return handle(async () => {
     if (env().RECEIPTS_PUBLIC_DEMO) throw new HttpError(403, "The public demo only accepts its built-in synthetic sample; personal photos are disabled.");
@@ -44,9 +54,9 @@ export async function POST(req: NextRequest, ctx: RouteContext<"/api/trials/[id]
       mime: file.type,
       width: meta.width!,
       height: meta.height!,
-      face: Face.parse(JSON.parse(String(form.get("face") ?? "null"))),
-      quality: z.record(z.string(), z.unknown()).parse(JSON.parse(String(form.get("quality") ?? "{}"))),
-      localDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).parse(form.get("localDate")),
+      face: Face.parse(parseJsonField(form.get("face"), "face", "null")),
+      quality: z.record(z.string(), z.unknown()).parse(parseJsonField(form.get("quality"), "quality", "{}")),
+      localDate: CalendarDate.parse(form.get("localDate")),
     });
     const resolved = capture.status === "analyzing" ? await resolveCapture(capture.id, { timeoutMs: 12_000 }) : capture;
     return captureView(resolved);

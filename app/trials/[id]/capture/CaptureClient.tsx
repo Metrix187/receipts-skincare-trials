@@ -169,14 +169,21 @@ export function CaptureClient(p: CaptureProps) {
 
   function shoot() {
     const v = videoRef.current;
-    if (v) void takeFrom(v, v.videoWidth, v.videoHeight);
+    if (v) takeFrom(v, v.videoWidth, v.videoHeight).catch(() => setError("Couldn't capture that frame. Try again."));
   }
 
   async function onFile(file: File) {
     const img = new Image();
     img.src = URL.createObjectURL(file);
-    await img.decode();
-    await takeFrom(img, img.naturalWidth, img.naturalHeight);
+    try {
+      await img.decode();
+      await takeFrom(img, img.naturalWidth, img.naturalHeight);
+    } catch {
+      // HEIC/corrupt files: the accept attribute is only advisory, and decode() rejects
+      setError("That image couldn't be read. Use a JPEG or PNG photo.");
+    } finally {
+      URL.revokeObjectURL(img.src);
+    }
   }
 
   async function submit() {

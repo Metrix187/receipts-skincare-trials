@@ -109,6 +109,8 @@ npm run dev          # http://localhost:3000  (/demo jumps to the split-face dem
 | `ANTHROPIC_API_KEY` | – | Enables the live Protocol / Verdict agents (otherwise deterministic mocks) |
 | `ANTHROPIC_MODEL` | `claude-opus-5-5` | Agent model |
 | `ANTHROPIC_EFFORT` | `medium` | `low` … `max` |
+| `MOCK_AGENTS` | `0` | `1` = deterministic mock agents even with a key set (tests, the public demo) |
+| `YOUCAM_BASE_URL` | `https://yce-api-01.makeupar.com` | YouCam API host; only change if Perfect Corp moves it |
 | `PHOTO_ENCRYPTION_KEY` | generated | 32 bytes, base64; encrypts selfies at rest |
 | `NEXT_PUBLIC_FACE_DETECTOR` | `mediapipe` | `mock` = fixed centered face (tests only) |
 

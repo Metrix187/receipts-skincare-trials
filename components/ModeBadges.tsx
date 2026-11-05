@@ -4,7 +4,7 @@ import { env } from "@/lib/env";
 export function ModeBadges() {
   const e = env();
   if (!e.youcamMock && !e.agentsMock) return null;
-  const title = [e.youcamMock && "MOCK_YOUCAM: results are fixtures, no units spent", e.agentsMock && "No ANTHROPIC_API_KEY: deterministic agents"].filter(Boolean).join(" · ");
+  const title = [e.youcamMock && "MOCK_YOUCAM: results are fixtures, no units spent", e.agentsMock && `${e.RECEIPTS_PUBLIC_DEMO ? "Public demo" : e.MOCK_AGENTS ? "MOCK_AGENTS" : "No ANTHROPIC_API_KEY"}: deterministic agents`].filter(Boolean).join(" · ");
   return (
     <div className="flex gap-1 whitespace-nowrap text-[11px] font-medium" title={title}>
       {/* phones: one compact badge */}

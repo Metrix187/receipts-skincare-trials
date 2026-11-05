@@ -36,6 +36,9 @@ export const RETAKE_GUIDANCE: Record<string, string> = {
   error_decode_image: "Image couldn't be decoded. Try again.",
   error_inference: "The analysis engine hiccuped. Retake (no units were charged).",
   unknown_internal_error: "Provider error. Retake (no units were charged).",
+  // pollTask failures (YouCamError.kind): the task ran but its result never came back
+  http: "Couldn't collect the result from the provider. Retake (units may have been charged).",
+  network: "Lost the connection while collecting the result. Retake (units may have been charged).",
 };
 
 export function retakeGuidance(code?: string | null) {
